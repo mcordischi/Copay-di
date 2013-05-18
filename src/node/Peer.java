@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 
@@ -32,7 +35,7 @@ import algorithm.StealingStrategy;
 
 public class Peer extends ReceiverAdapter implements Master, Slave {
 	
-//	final Executor executor;
+	final ExecutorService executor;
 	private Vector<TaskEntry> tasksIndex = new Vector<TaskEntry>();
 	private JChannel channel;
 	private SchedulerStrategy schStrat;
@@ -44,17 +47,18 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	private boolean localState;
 	private boolean finished;
 	private Vector<TaskEntry> pendingTasks = new Vector<TaskEntry>();
+	private Map<TaskEntry,Future<Object> > workingTasks = new HashMap<TaskEntry, Future<Object> >();
 	public static boolean WORKING = true ;
 	public static boolean PAUSE = false ;
 	
 	
-	public Peer(Eventable e,SchedulerStrategy schStrat, StealingStrategy stlStrat/*, Executor executor*/){
+	public Peer(Eventable e,SchedulerStrategy schStrat, StealingStrategy stlStrat, ExecutorService executor){
 		this.e = e ;
 		this.schStrat = schStrat;
 		this.stlStrat = stlStrat;
 		this.localState = PAUSE;
 		this.finished = false;
-//		this.executor = executor;
+		this.executor = executor;
 	}
 
 	public void connect(String cluster) throws Exception{
@@ -117,6 +121,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		}
 		if (entry != null){
 			e.eventTaskExecution(entry);
+			Future<Object> fResult = (Future<Object>) executor.submit(task);
 			Object result = task.execute();
 			try {
 				sendResult(result,entry);
