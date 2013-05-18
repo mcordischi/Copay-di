@@ -11,6 +11,7 @@ import java.util.Vector;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
@@ -36,6 +37,7 @@ import algorithm.StealingStrategy;
 public class Peer extends ReceiverAdapter implements Master, Slave {
 	
 	final ExecutorService executor;
+	private int maxThreads;
 	private Vector<TaskEntry> tasksIndex = new Vector<TaskEntry>();
 	private JChannel channel;
 	private SchedulerStrategy schStrat;
@@ -52,13 +54,14 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	public static boolean PAUSE = false ;
 	
 	
-	public Peer(Eventable e,SchedulerStrategy schStrat, StealingStrategy stlStrat, ExecutorService executor){
+	public Peer(Eventable e,SchedulerStrategy schStrat, StealingStrategy stlStrat, int maxThreads){
 		this.e = e ;
 		this.schStrat = schStrat;
 		this.stlStrat = stlStrat;
 		this.localState = PAUSE;
 		this.finished = false;
-		this.executor = executor;
+		this.maxThreads = maxThreads;
+		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
 	}
 
 	public void connect(String cluster) throws Exception{
@@ -78,10 +81,13 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	private synchronized void start() throws Exception{
 		while (globalState == WORKING && localState== WORKING && !finished){
 			TaskEntry entry = fetchTask();
-			if(entry != null)
+			if(entry != null){
+				while(pendingTasks.size() >= maxThreads)
+					Thread.sleep(500);
 				requestTask(entry);
+			}
 			else {
-				e.eventLocalPause();
+				e.eventLocalCompletion();
 				finished = true;
 			}
 		}
@@ -120,11 +126,12 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			}
 		}
 		if (entry != null){
+			pendingTasks.remove(entry);
 			e.eventTaskExecution(entry);
 			Future<Object> fResult = (Future<Object>) executor.submit(task);
-			Object result = task.execute();
+			workingTasks.put(entry, fResult);
 			try {
-				sendResult(result,entry);
+				sendResult(fResult.get(),entry);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -268,16 +275,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case ADD_TASK:
-			synchronized(tasksIndex){
-				tasksIndex.add(((TaskNotification)tmsg).getEntry());
-			}
-			finished = false;
-			e.eventNewTask(((TaskNotification)tmsg).getEntry());
-			try {
-				start();
-			} catch (Exception e1) {
-				e1.printStackTrace();
-			}
+			handleAddTask(((TaskNotification)tmsg).getEntry());
 			break;
 		case REMOVE_TASK :
 			synchronized(tasksIndex){
@@ -300,28 +298,16 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			e.eventSystemPause();
 			break;
 		case TASK_STEAL :
-			synchronized(tasksIndex){
-				tasksIndex.remove(((TaskNotification)tmsg).getEntry());
-				tasksIndex.add(((TaskNotification)tmsg).getEntry());
-				if (pendingTasks.contains(((TaskNotification)tmsg).getEntry()))
-					pendingTasks.remove(((TaskNotification)tmsg).getEntry());
-					
-			}
-			e.eventTaskSteal(((TaskNotification)tmsg).getEntry());
+			if (!msg.getSrc().equals(channel.getAddress()))
+				handleSteal(((TaskNotification)tmsg).getEntry());
 			break;
 		case TASK_STATE :
-			synchronized(tasksIndex){
-				tasksIndex.remove(((TaskNotification)tmsg).getEntry());
-				tasksIndex.add(((TaskNotification)tmsg).getEntry());
-			}
-			e.eventTaskUpdate(((TaskNotification)tmsg).getEntry());
+			if (!msg.getSrc().equals(channel.getAddress()))
+				handleTaskUpdate(((TaskNotification)tmsg).getEntry());
 			break;
 		case TASK_RESULT :
-			synchronized(tasksIndex){
-				tasksIndex.remove(((TaskNotification)tmsg).getEntry());
-				tasksIndex.add(((TaskNotification)tmsg).getEntry());
-			}
-			e.eventTaskComplete(((TaskNotification)tmsg).getEntry());
+			if (!msg.getSrc().equals(channel.getAddress()))
+				handleTaskResult(((TaskNotification)tmsg).getEntry());
 			break;
 		case TASK_REQUEST :
 			TaskID id = ((TaskRequest)tmsg).getId();
@@ -330,7 +316,6 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		case TASK_RESPONSE :
 			TaskID tId = ((TaskResponse)tmsg).getId();
 			Task task = ((TaskResponse)tmsg).getTask() ;
-			//DEBUG
 			if (task == null)
 				e.eventError("Null task received");
 			else
@@ -341,6 +326,103 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		}
 	}
 	
+	/**
+	 * Actions to make when a TASK_STEAL message was received
+	 * 	 
+	 */
+	private void handleSteal(TaskEntry entry){
+		TaskEntry oldEntry = null;
+		for(TaskEntry e : tasksIndex)
+			if (e.equals(entry)){
+				oldEntry = e;
+				break;
+			}
+		if (oldEntry == null)
+			//The ADD_TASK message hasn't been received yet
+			handleAddTask(entry);
+		else{
+			if(oldEntry.getHandler().equals(channel.getAddress())){
+				//MUST check if the task was being handled
+				synchronized(pendingTasks){
+					pendingTasks.remove(oldEntry);
+				}
+				synchronized(workingTasks){
+					Future<Object> f = workingTasks.get(oldEntry);
+						if (f!= null){
+						f.cancel(true);
+						workingTasks.remove(oldEntry);
+						}
+				}
+			}
+			oldEntry.setHandler(entry.getHandler());
+			oldEntry.setState(entry.getState());
+			e.eventTaskSteal(entry);
+			//TODO Improve eventTaskSteal information (old owner)
+		}
+	}
+	
+	/**
+	 * Actions to make when a TASK_UPDATE message was received
+	 * @param entry
+	 */
+	private void handleTaskUpdate(TaskEntry entry){
+		TaskEntry oldEntry = null;
+		for(TaskEntry e : tasksIndex)
+			if (e.equals(entry)){
+				oldEntry = e;
+				break;
+			}
+		if (oldEntry == null)
+			//The ADD_TASK message hasn't been received yet
+			handleAddTask(entry);
+		else {
+			if (oldEntry.getState() != TaskEntry.StateType.FINISHED){
+				oldEntry.setState(entry.getState());
+				e.eventTaskUpdate(entry);
+			}
+		}
+	}
+	
+	/**
+	 * Handle the ADD_TASK message
+	 * @param entry
+	 */
+	private void handleAddTask(TaskEntry entry){
+		boolean exists = tasksIndex.contains(entry);
+		if (!exists){
+			synchronized(tasksIndex){
+			tasksIndex.add(entry);
+			}
+			finished = false;
+			e.eventNewTask(entry);
+			try {
+				start();
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+	}
+	
+	/**
+	 * Handle the TASK_RESULT message
+	 * @param entry
+	 */
+	private void handleTaskResult(TaskEntry entry){
+		//TODO notify if owner equals local address
+		boolean exists = tasksIndex.contains(entry);
+		if (exists){
+			TaskEntry oldEntry = null;
+			for (TaskEntry e : tasksIndex)
+				if(e.equals(entry)){
+					oldEntry = e;
+					break;
+				}	
+			oldEntry.setResult(entry.getResult());
+			e.eventTaskComplete(oldEntry);
+		}else
+			//The ADD_TASK has not been received yet
+			handleAddTask(entry);
+	}
 	
 	/**
 	 * Sends the response to the src of the message with the task.
@@ -353,7 +435,6 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			e.eventError("Null ID received in a Task Request");
 		else{
 			try {
-				e.eventWarning("Checking: " + id.toString());
 				Task t = null;
 				synchronized(tasksMap){
 					for (TaskID tid : tasksMap.keySet())

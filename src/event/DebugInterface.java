@@ -99,4 +99,9 @@ public class DebugInterface implements Eventable {
 		
 	}
 
+	@Override
+	public void eventLocalCompletion() {
+		System.out.println("The node finished its jobs");		
+	}
+
 }

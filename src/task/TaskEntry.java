@@ -29,6 +29,11 @@ public class TaskEntry implements Serializable{
 		
 	}
 	
+	@Override
+	public int hashCode(){
+		return id.hashCode();
+	}
+	
 	public String toString(){
 		String str = "TE:" + id.toString() + "\tHandler: " + handler.toString() + "\tState: " + state ; 
 		return str;

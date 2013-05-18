@@ -32,6 +32,8 @@ public interface Eventable {
 		
 		public abstract void eventLocalPause();
 		
+		public abstract void eventLocalCompletion();
+		
 		public abstract void eventNodeCrash(Address node);
 		
 		public abstract void eventNodeAvailable(Address node);

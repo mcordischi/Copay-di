@@ -28,6 +28,11 @@ public class TaskID implements Serializable {
 		return false;					
 	}
 	
+	@Override
+	public int hashCode(){
+		return owner.hashCode() + id ;
+	}
+	
 	public String toString(){
 		return id + ":" + owner.toString();
 	}

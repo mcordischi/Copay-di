@@ -16,7 +16,7 @@ public class StringTask implements Task,Streamable {
 	}
 	
 	@Override
-	public Object execute() {
+	public Object call() {
 		for (int i=0; i<1000000; i++)
 			;
 		return result + " FINISHED";
@@ -36,6 +36,6 @@ public class StringTask implements Task,Streamable {
 		Util.objectToStream(this,arg0);	
 		
 	}
-		
+
 
 }

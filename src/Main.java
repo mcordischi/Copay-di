@@ -20,7 +20,7 @@ public class Main {
 		Eventable di = new DebugInterface();
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
 		StealingStrategy stlStrat = new NullStealingStrategy();
-		Peer peer = new Peer(di,schStrat,stlStrat);
+		Peer peer = new Peer(di,schStrat,stlStrat,2);
 		peer.connect("network");
 		
 		
@@ -33,7 +33,7 @@ public class Main {
         TaskID id = null;
 		if (str.startsWith("y")){
 		
-			for (int i= 0 ; i<1;i++){
+			for (int i= 0 ; i<10;i++){
 				Task t= new StringTask("t" + i);
 				tasks.add(t);
 				id = peer.submit(t, 0);

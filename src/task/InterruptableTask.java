@@ -20,7 +20,7 @@ public class InterruptableTask implements Runnable {
         while(!Thread.currentThread().isInterrupted()){  
             if(!interrupted){  
                 //Do work here
-            	result = task.execute();
+            	result = task.call();
             }
             else{  
                 //Has been suspended  
