@@ -11,13 +11,13 @@ public interface Master {
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract TaskID submit(Task t, long timeout) throws Exception;
+	public abstract TaskID submit(Task t, long timeout);
 	
-	public abstract void connect(String Cluster) throws Exception;
+	public abstract void connect(String Cluster);
 	
 	public boolean isDone(TaskID id);
 	
 	public Object getResult(TaskID id);
 	
-	public void setGlobalState(boolean GlobalState) throws Exception;
+	public void setGlobalState(boolean GlobalState);
 }

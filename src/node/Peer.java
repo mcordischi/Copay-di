@@ -64,11 +64,15 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
 	}
 
-	public void connect(String cluster) throws Exception{
-		channel = new JChannel();
-		channel.setReceiver(this);
-        channel.connect(cluster);
-        channel.getState(null, 10000);
+	public void connect(String cluster){
+		try {
+			channel = new JChannel();
+			channel.setReceiver(this);
+	        channel.connect(cluster);
+	        channel.getState(null, 10000);
+		} catch (Exception e1) {
+			e.eventError("Could not connect to cluster");
+		}
 	}
 	
 	public void disconnect(){
@@ -78,12 +82,16 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	/**
 	 * Working loop. It searches for tasks and execute them
 	 */
-	private synchronized void start() throws Exception{
+	private synchronized void start() {
 		while (globalState == WORKING && localState== WORKING && !finished){
 			TaskEntry entry = fetchTask();
 			if(entry != null){
 				while(pendingTasks.size() >= maxThreads)
-					Thread.sleep(500);
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e1) {
+						e.eventError("Thread.sleep\n" + e1.getCause());
+					}
 				requestTask(entry);
 			}
 			else {
@@ -99,16 +107,26 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	 * @param entry
 	 * @param task
 	 */
-	public void requestTask(TaskEntry entry) throws Exception{
+	public void requestTask(TaskEntry entry){
 		synchronized(entry){
 			entry.setState(TaskEntry.StateType.WORKING);
 		}
 		e.eventTaskRequest(entry.getId());
 		pendingTasks.add(entry);
-		//Notify cluster that the node is going to start the execution of the task
-		channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_STATE,entry));
-		//Request the task to the owner
-		channel.send(entry.getOwner(), new TaskRequest(TaskMessage.MessageType.TASK_REQUEST, entry.getId()));
+		//TODO Send only one message?
+		try {
+			//Notify cluster that the node is going to start the execution of the task
+			channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_STATE,entry));
+			//Request the task to the owner
+			channel.send(entry.getOwner(), new TaskRequest(TaskMessage.MessageType.TASK_REQUEST, entry.getId()));
+		} catch (Exception e1) {
+			e.eventError("Request Task Failed. Are you still connected to the cluster?");
+			synchronized(entry){
+				entry.setState(TaskEntry.StateType.UNDEFINED);
+			}
+			pendingTasks.remove(entry);
+		}
+
 	}
 	
 	/**
@@ -116,8 +134,6 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	 * @throws Exception 
 	 */
 	public void handle(TaskID id, Task task){
-		//TODO Analyze using Executor
-		//TODO Check if it is in pendingTasks
 		TaskEntry entry = null;
 		for (TaskEntry i : pendingTasks){
 			if (i.getId().equals(id)){
@@ -145,7 +161,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	 * calls a stealing algorithm to steal from other node.
 	 *
 	 */
-	public synchronized TaskEntry fetchTask() throws Exception{
+	public synchronized TaskEntry fetchTask(){
 		Address localAddress = channel.getAddress();
 		for (TaskEntry entry : tasksIndex){
 			if (entry.getHandler().equals(localAddress) && entry.getState().equals(TaskEntry.StateType.SUBMITTED))
@@ -157,7 +173,12 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		synchronized(result){
 			result.setHandler(channel.getAddress());
 		}
-		channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_STEAL,result));
+		try {
+			channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_STEAL,result));
+		} catch (Exception e1) {
+			e.eventError("Steal message failed. Are you still connected to the cluster?");
+			return null;
+		}
 		return result ;
 	}
 	
@@ -166,18 +187,22 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	 * @param result: the result of the task
 	 * @param entry: the task entry
 	 */
-	public void sendResult(Object result, TaskEntry entry ) throws Exception{
+	public void sendResult(Object result, TaskEntry entry ){
 		synchronized(entry){
 			entry.setResult(result);
 			entry.setState(TaskEntry.StateType.FINISHED);
 		}
 		e.eventTaskComplete(entry);
 		//Notifies the cluster of the state and the result
-		channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_RESULT,entry));
+		try {
+			channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_RESULT,entry));
+		} catch (Exception e1) {
+			e.eventError("Send result failed. Are you still connected to the cluster?");
+		}
 	}
 
 
-	public TaskID submit(Task t, long timeout) throws Exception {
+	public TaskID submit(Task t, long timeout){
 		TaskID id = TaskID.newTask(channel.getAddress());
 		synchronized(tasksMap){
 			tasksMap.put(id, t);
@@ -185,7 +210,13 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		TaskEntry entry = new TaskEntry(id,null,timeout);
 		schStrat.assign(entry, channel.getView());
 		//Notify the cluster that a new task exists
-		channel.send(null, new TaskNotification(TaskMessage.MessageType.ADD_TASK,entry));
+		try {
+			channel.send(null, new TaskNotification(TaskMessage.MessageType.ADD_TASK,entry));
+		} catch (Exception e1) {
+			e.eventError("Submit Failed. Are you connected to the cluster?");
+			tasksMap.remove(id);
+			return null;
+		}
 		return id;
 	}
 	
@@ -262,8 +293,15 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	 */
 	private synchronized void editTasks(Address address){
 		for(TaskEntry te : tasksIndex){
-			if (te.getOwner().equals(address))
+			if (te.getOwner().equals(address)){
 				tasksIndex.remove(te);
+				pendingTasks.remove(te);
+				if (workingTasks.containsKey(te)){
+					Future ft = workingTasks.get(te);
+					ft.cancel(true);
+					workingTasks.remove(te);
+				}
+			}
 			if (te.getHandler().equals(address)){
 				te.setHandler(null);
 				te.setState(TaskEntry.StateType.SUBMITTED);
@@ -278,10 +316,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			handleAddTask(((TaskNotification)tmsg).getEntry());
 			break;
 		case REMOVE_TASK :
-			synchronized(tasksIndex){
-			tasksIndex.remove(((TaskNotification)tmsg).getEntry());
-			}
-			e.eventRemoveTask(((TaskNotification)tmsg).getEntry().getId());
+			handleRemoveTask(((TaskNotification)tmsg).getEntry());
 			break;
 		case GLOBAL_START :
 			globalState= WORKING;
@@ -404,11 +439,31 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	}
 	
 	/**
+	 * Handle the REMOVE_TASK message
+	 */
+	private void handleRemoveTask(TaskEntry entry){
+		synchronized(tasksIndex){
+			tasksIndex.remove(entry);
+		}
+		synchronized(pendingTasks){
+			pendingTasks.remove(entry);
+		}
+		synchronized(workingTasks){
+			if (workingTasks.containsKey(entry)){
+				Future taskF = workingTasks.get(entry);
+				taskF.cancel(true);
+				workingTasks.remove(entry);
+			}
+		}
+		e.eventRemoveTask(entry.getId());
+	}
+	
+	
+	/**
 	 * Handle the TASK_RESULT message
 	 * @param entry
 	 */
 	private void handleTaskResult(TaskEntry entry){
-		//TODO notify if owner equals local address
 		boolean exists = tasksIndex.contains(entry);
 		if (exists){
 			TaskEntry oldEntry = null;
@@ -418,10 +473,14 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 					break;
 				}	
 			oldEntry.setResult(entry.getResult());
-			e.eventTaskComplete(oldEntry);
-		}else
+//			e.eventTaskComplete(oldEntry); 
+		}else{
 			//The ADD_TASK has not been received yet
 			handleAddTask(entry);
+		}
+		//notify if owner equals local address
+		if (entry.getOwner().equals(channel.getAddress()))
+			e.eventTaskComplete(entry);
 	}
 	
 	/**
@@ -477,19 +536,23 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		return globalState;
 	}
 
-	public void setGlobalState(boolean globalState) throws Exception{
+	public void setGlobalState(boolean globalState){
 		this.globalState = globalState;
-		if (globalState)
-			channel.send(null,new TaskMessage(TaskMessage.MessageType.GLOBAL_START));
-		else
-			channel.send(null,new TaskMessage(TaskMessage.MessageType.GLOBAL_PAUSE));
+		try {
+			if (globalState)
+				channel.send(null,new TaskMessage(TaskMessage.MessageType.GLOBAL_START));
+			else
+				channel.send(null,new TaskMessage(TaskMessage.MessageType.GLOBAL_PAUSE));
+		} catch (Exception e1) {
+			e.eventError("Could not set Global State. Are you still connected to the cluster?");
+		}
 	}
 
 	public boolean isLocalState() {
 		return localState;
 	}
 
-	public synchronized void setLocalState(boolean localState) throws Exception{
+	public synchronized void setLocalState(boolean localState) {
 		this.localState = localState;
 		if (localState == WORKING)
 			start();

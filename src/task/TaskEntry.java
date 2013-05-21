@@ -10,7 +10,7 @@ public class TaskEntry implements Serializable{
 	private Address handler;
 	private Object result;
 	private long timeout;
-	public static enum StateType{WORKING,SUBMITTED,FINISHED,TIMEOUT};
+	public static enum StateType{WORKING,SUBMITTED,FINISHED,TIMEOUT,UNDEFINED};
 	private StateType state;
 	
 	public TaskEntry (TaskID id, Address handler, long timeout){
