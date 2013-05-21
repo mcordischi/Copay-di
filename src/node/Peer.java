@@ -133,7 +133,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	 * Handles the task and calls {@link #sendResult(Object, TaskEntry)} to return the result via multicast message
 	 * @throws Exception 
 	 */
-	public void handle(TaskID id, Task task){
+	public void handleTask(TaskID id, Task task){
 		TaskEntry entry = null;
 		for (TaskEntry i : pendingTasks){
 			if (i.getId().equals(id)){
@@ -148,8 +148,8 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			workingTasks.put(entry, fResult);
 			try {
 				sendResult(fResult.get(),entry);
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (Exception e1) {
+				e.eventError("Problem sending the result");
 			}
 		}
 		else
@@ -199,6 +199,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		} catch (Exception e1) {
 			e.eventError("Send result failed. Are you still connected to the cluster?");
 		}
+		handleTaskResult(entry);
 	}
 
 
@@ -354,7 +355,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			if (task == null)
 				e.eventError("Null task received");
 			else
-				handle(tId, task);
+				handleTask(tId, task);
 			break;
 		default:
 			break;
@@ -480,7 +481,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		}
 		//notify if owner equals local address
 		if (entry.getOwner().equals(channel.getAddress()))
-			e.eventTaskComplete(entry);
+			e.eventTaskResult(entry);
 	}
 	
 	/**

@@ -104,4 +104,10 @@ public class DebugInterface implements Eventable {
 		System.out.println("The node finished its jobs");		
 	}
 
+	@Override
+	public void eventTaskResult(TaskEntry entry) {
+		System.out.println("Task Result Received. \t" + entry.getId().toString() + "\n\t" + entry.getResult().toString());
+		
+	}
+
 }

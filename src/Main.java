@@ -57,10 +57,6 @@ public class Main {
 		peer.setGlobalState(true);
 		peer.setLocalState(true);
 
-		while (!peer.isDone(id))
-			;
-		System.out.println("RESULT: " + peer.getResult(id).toString());
-		
 	}
 
 }

@@ -8,7 +8,7 @@ public class TaskID implements Serializable {
 	
 	private Address owner;
 	private int id;
-	private static int next_id=1;
+	private static int next_id=0;
 	
 	public TaskID(Address owner,int id){
 		this.owner = owner;
