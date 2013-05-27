@@ -46,11 +46,7 @@ public class Main {
 		Map<TaskID,Task> map = peer.getTasksMap();
 		
 		System.out.println("MAP SIZE :" + map.size());
-		
-//		for (TaskID i : map.keySet()){
-//			System.out.println("TASK: " + ii.toString() + " "+ ((StringTask)map.get(ii)).test());
-//		}
-		
+
         System.out.print("Press enter to start the system"); System.out.flush();
         in.readLine().toLowerCase();
 		

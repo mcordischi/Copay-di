@@ -11,13 +11,16 @@ public interface Master {
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract TaskID submit(Task t, long timeout);
+	public abstract FutureTaskResult<Object> submit(Task t);
+	
+	public abstract void cancel(Task t);
 	
 	public abstract void connect(String Cluster);
 	
-	public boolean isDone(TaskID id);
-	
-	public Object getResult(TaskID id);
+//	Used in TaskResult
+//	public boolean isDone(Task id);
+//	
+//	public Object getResult(TaskID id);
 	
 	public void setGlobalState(boolean GlobalState);
 }
