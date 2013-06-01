@@ -36,7 +36,7 @@ public class Main {
 			for (int i= 0 ; i<10;i++){
 				Task t= new StringTask("t" + i);
 				tasks.add(t);
-				id = peer.submit(t, 0);
+				id = peer.submit(t);
 			}
 		}
 		

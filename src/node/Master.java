@@ -2,7 +2,7 @@ package node;
 import task.*;
 
 
-public interface Master {
+public interface Master extends Node{
 	
 	/**
 	 * Submits a task to the cluster, returns the "Ticket" to the answer.
@@ -13,14 +13,6 @@ public interface Master {
 	 */
 	public abstract FutureTaskResult<Object> submit(Task t);
 	
-	public abstract void cancel(Task t);
-	
-	public abstract void connect(String Cluster);
-	
-//	Used in TaskResult
-//	public boolean isDone(Task id);
-//	
-//	public Object getResult(TaskID id);
-	
-	public void setGlobalState(boolean GlobalState);
+	public abstract void cancel(TaskID id);
+
 }

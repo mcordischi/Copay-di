@@ -8,16 +8,14 @@ import org.jgroups.util.Streamable;
 public class TaskEntry implements Serializable{
 	private TaskID id;
 	private Address handler;
-	private Object result;
-	private long timeout;
+//	private Object result;
+//	private long timeout;
 	public static enum StateType{WORKING,SUBMITTED,FINISHED,TIMEOUT,UNDEFINED};
 	private StateType state;
 	
-	public TaskEntry (TaskID id, Address handler, long timeout){
+	public TaskEntry (TaskID id, Address handler){
 		this.id = id;
 		this.handler = handler;
-		this.timeout = timeout;
-		result = null;
 		state = StateType.SUBMITTED;
 	}
 
@@ -64,16 +62,6 @@ public class TaskEntry implements Serializable{
 	}
 
 
-	public Object getResult() {
-		return result;
-	}
-
-
-	public void setResult(Object result) {
-		this.result = result;
-	}
-
-
 	public StateType getState() {
 		return state;
 	}
@@ -83,14 +71,7 @@ public class TaskEntry implements Serializable{
 		this.state = state;
 	}
 
-	public long getTimeout() {
-		return timeout;
-	}
 
-	public void setTimeout(long timeout) {
-		this.timeout = timeout;
-	}
-	
 	
 	
 

@@ -51,10 +51,11 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	private boolean finished;
 	
 	
-	private Map<TaskEntry,Future> tasksResult;
+	private Map<TaskID,FutureTaskResult> tasksResults = new ConcurrentHashMap<TaskID,FutureTaskResult>();
 	//TODO Change info
 	private Map<TaskID,Task> tasksMap = new ConcurrentHashMap<TaskID,Task>();
 	private Vector<TaskEntry> tasksIndex = new Vector<TaskEntry>();
+	
 	private Vector<TaskEntry> pendingTasks = new Vector<TaskEntry>();
 	private Map<TaskEntry,Future<Object> > workingTasks = new ConcurrentHashMap<TaskEntry, Future<Object> >();
 	
@@ -63,6 +64,14 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	
 	/*** METHODS ***/
 	
+	
+	/**
+	 * Constructor
+	 * @param e
+	 * @param schStrat
+	 * @param stlStrat
+	 * @param maxThreads
+	 */
 	public Peer(Eventable e,SchedulerStrategy schStrat, StealingStrategy stlStrat, int maxThreads){
 		this.e = e ;
 		this.schStrat = schStrat;
@@ -73,6 +82,10 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
 	}
 
+	
+	/**
+	 * Connect to the cluster
+	 */
 	public void connect(String cluster){
 		try {
 			channel = new JChannel();
@@ -84,9 +97,14 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		}
 	}
 	
+	
+	/**
+	 * Disconnect from the cluster
+	 */
 	public void disconnect(){
 		channel.close();
 	}
+	
 	
 	/**
 	 * Working loop. It searches for tasks and execute them
@@ -218,13 +236,13 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 	}
 
 
-	public FutureTaskResult<Object> submit(Task t, long timeout){
+	public FutureTaskResult<Object> submit(Task t){
 		//TODO return TaskResult
 		TaskID id = TaskID.newTask(channel.getAddress());
 		synchronized(tasksMap){
 			tasksMap.put(id, t);
 		}
-		TaskEntry entry = new TaskEntry(id,null,timeout);
+		TaskEntry entry = new TaskEntry(id,null);
 		schStrat.assign(entry, channel.getView());
 		//Notify the cluster that a new task exists
 		try {
@@ -234,7 +252,9 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			tasksMap.remove(id);
 			return null;
 		}
-		return id;
+		FutureTaskResult futureTask = new FutureTaskResult(id,this);
+		tasksResults.put(id, futureTask);
+		return futureTask;
 	}
 	
 	/**
@@ -595,7 +615,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 
 
 	@Override
-	public void cancel(Task t) {
+	public void cancel(TaskID id) {
 		// TODO Auto-generated method stub
 		
 	}

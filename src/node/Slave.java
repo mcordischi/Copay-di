@@ -2,7 +2,7 @@ package node;
 
 
 
-public interface Slave {
+public interface Slave extends Node {
 	public abstract void setLocalState(boolean localState);
-	public abstract void connect(String Cluster);
+
 }
