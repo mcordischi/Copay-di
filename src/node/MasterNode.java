@@ -68,14 +68,14 @@ public class MasterNode extends TasksNode implements Master {
 		TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case TASK_RESULT :
-				handleTaskResult(((TaskResult)tmsg));
+				handleTaskResult(((TaskResultMessage)tmsg));
 			break;
 		case TASK_REQUEST :
-			TaskID id = ((TaskRequest)tmsg).getId();
+			TaskID id = ((TaskRequestMessage)tmsg).getId();
 			taskResponse(id,msg.getSrc());
 			break;
 		case TASK_ERROR :
-			handleTaskError((TaskError)tmsg);
+			handleTaskError((TaskErrorMessage)tmsg);
 		default:
 			super.receive(msg);
 		}
@@ -87,7 +87,7 @@ public class MasterNode extends TasksNode implements Master {
 	 * TASK_RESULT contains the result of the executed task
 	 * @param entry
 	 */
-	private void handleTaskResult(TaskResult msg){
+	private void handleTaskResult(TaskResultMessage msg){
 		//TODO Handle the Future. 
 		//Notify nodes of the task completed? Or the Slave is the responsible?
 	}
@@ -97,7 +97,7 @@ public class MasterNode extends TasksNode implements Master {
 	 * Handle the TASK_ERROR message
 	 * TASK_ERROR contains a throwable catch in the execution of the task  
 	 */
-	private void handleTaskError(TaskError msg){
+	private void handleTaskError(TaskErrorMessage msg){
 		//TODO
 	}
 	
@@ -123,7 +123,7 @@ public class MasterNode extends TasksNode implements Master {
 //						t = tasksMap.get(id);
 				}
 				if (t != null){
-					channel.send(src, new TaskResponse(t,id));
+					channel.send(src, new TaskResponseMessage(t,id));
 					e.eventTaskResponse(id);
 				}
 				else

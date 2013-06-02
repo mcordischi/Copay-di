@@ -2,8 +2,9 @@ package node;
 
 import java.util.Vector;
 
+import message.NodeInfoMessage;
 import message.TaskMessage;
-import message.TaskNotification;
+import message.TaskNotificationMessage;
 
 
 import org.jgroups.JChannel;
@@ -65,10 +66,10 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case ADD_TASK:
-			handleAddTask(((TaskNotification)tmsg).getEntry());
+			handleAddTask(((TaskNotificationMessage)tmsg).getEntry());
 			break;
 		case REMOVE_TASK :
-			handleRemoveTask(((TaskNotification)tmsg).getEntry());
+			handleRemoveTask(((TaskNotificationMessage)tmsg).getEntry());
 			break;
 		case GLOBAL_START :
 			globalState= WORKING;
@@ -80,14 +81,18 @@ public class TasksNode extends ReceiverAdapter implements Node {
 			break;
 		case TASK_STATE :
 			if (!msg.getSrc().equals(channel.getAddress()))
-				handleTaskUpdate(((TaskNotification)tmsg).getEntry());
+				handleTaskUpdate(((TaskNotificationMessage)tmsg).getEntry());
 			break;
+		case NODE_INFORMATION:
+			updateNodeInformation((NodeInfoMessage)tmsg);
 		default:
 			break;
 		}	}
 
 	
 	
+
+
 	/**
 	 * Actions to make when a TASK_UPDATE message was received
 	 * @param entry
@@ -147,7 +152,21 @@ public class TasksNode extends ReceiverAdapter implements Node {
 //		}
 		e.eventRemoveTask(entry.getId());
 	}
-
+	
+	/**
+	 * EMPTY METHOD
+	 * Handles the update of a node's information.
+	 * @param tmsg
+	 */
+	private void updateNodeInformation(NodeInfoMessage tmsg) {
+	}
+	
+	/**
+	 * EMPTY METHOD
+	 * Sends updated information about the Node to the cluster
+	 */
+	public void sendInformation(){
+	}
 	
 	public boolean isLocalState() {
 		return localState;

@@ -8,8 +8,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import message.TaskMessage;
-import message.TaskNotification;
-import message.TaskResponse;
+import message.TaskNotificationMessage;
+import message.TaskResponseMessage;
 
 import org.jgroups.Message;
 
@@ -66,8 +66,8 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case TASK_RESPONSE:
-			TaskID tId = ((TaskResponse)tmsg).getId();
-			Task task = ((TaskResponse)tmsg).getTask() ;
+			TaskID tId = ((TaskResponseMessage)tmsg).getId();
+			Task task = ((TaskResponseMessage)tmsg).getTask() ;
 			if (task == null)
 				e.eventError("Null task received");
 			else
@@ -122,7 +122,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		e.eventTaskComplete(entry);
 		//Notifies the cluster of the state and the result
 		try {
-			channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_RESULT,entry));
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_RESULT,entry));
 		} catch (Exception e1) {
 			e.eventError("Send result failed. Are you still connected to the cluster?");
 		}

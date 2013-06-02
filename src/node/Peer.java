@@ -143,9 +143,9 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		//TODO Send only one message?
 		try {
 			//Notify cluster that the node is going to start the execution of the task
-			channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_STATE,entry));
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STATE,entry));
 			//Request the task to the owner
-			channel.send(entry.getOwner(), new TaskRequest(TaskMessage.MessageType.TASK_REQUEST, entry.getId()));
+			channel.send(entry.getOwner(), new TaskRequestMessage(TaskMessage.MessageType.TASK_REQUEST, entry.getId()));
 		} catch (Exception e1) {
 			e.eventError("Request Task Failed. Are you still connected to the cluster?");
 			synchronized(entry){
@@ -207,7 +207,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			result.setHandler(channel.getAddress());
 		}
 		try {
-			channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_STEAL,result));
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STEAL,result));
 		} catch (Exception e1) {
 			e.eventError("Steal message failed. Are you still connected to the cluster?");
 			return null;
@@ -228,7 +228,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		e.eventTaskComplete(entry);
 		//Notifies the cluster of the state and the result
 		try {
-			channel.send(null, new TaskNotification(TaskMessage.MessageType.TASK_RESULT,entry));
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_RESULT,entry));
 		} catch (Exception e1) {
 			e.eventError("Send result failed. Are you still connected to the cluster?");
 		}
@@ -246,7 +246,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		schStrat.assign(entry, channel.getView());
 		//Notify the cluster that a new task exists
 		try {
-			channel.send(null, new TaskNotification(TaskMessage.MessageType.ADD_TASK,entry));
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.ADD_TASK,entry));
 		} catch (Exception e1) {
 			e.eventError("Submit Failed. Are you connected to the cluster?");
 			tasksMap.remove(id);
@@ -354,10 +354,10 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 		TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case ADD_TASK:
-			handleAddTask(((TaskNotification)tmsg).getEntry());
+			handleAddTask(((TaskNotificationMessage)tmsg).getEntry());
 			break;
 		case REMOVE_TASK :
-			handleRemoveTask(((TaskNotification)tmsg).getEntry());
+			handleRemoveTask(((TaskNotificationMessage)tmsg).getEntry());
 			break;
 		case GLOBAL_START :
 			globalState= WORKING;
@@ -375,23 +375,23 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 			break;
 		case TASK_STEAL :
 			if (!msg.getSrc().equals(channel.getAddress()))
-				handleSteal(((TaskNotification)tmsg).getEntry());
+				handleSteal(((TaskNotificationMessage)tmsg).getEntry());
 			break;
 		case TASK_STATE :
 			if (!msg.getSrc().equals(channel.getAddress()))
-				handleTaskUpdate(((TaskNotification)tmsg).getEntry());
+				handleTaskUpdate(((TaskNotificationMessage)tmsg).getEntry());
 			break;
 		case TASK_RESULT :
 			if (!msg.getSrc().equals(channel.getAddress()))
-				handleTaskResult(((TaskNotification)tmsg).getEntry());
+				handleTaskResult(((TaskNotificationMessage)tmsg).getEntry());
 			break;
 		case TASK_REQUEST :
-			TaskID id = ((TaskRequest)tmsg).getId();
+			TaskID id = ((TaskRequestMessage)tmsg).getId();
 			taskResponse(id,msg.getSrc());
 			break;
 		case TASK_RESPONSE :
-			TaskID tId = ((TaskResponse)tmsg).getId();
-			Task task = ((TaskResponse)tmsg).getTask() ;
+			TaskID tId = ((TaskResponseMessage)tmsg).getId();
+			Task task = ((TaskResponseMessage)tmsg).getTask() ;
 			if (task == null)
 				e.eventError("Null task received");
 			else
@@ -551,7 +551,7 @@ public class Peer extends ReceiverAdapter implements Master, Slave {
 //					t = tasksMap.get(id);
 				}
 				if (t != null){
-					channel.send(src, new TaskResponse(t,id));
+					channel.send(src, new TaskResponseMessage(t,id));
 					e.eventTaskResponse(id);
 				}
 				else
