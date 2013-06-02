@@ -10,7 +10,7 @@ import org.jgroups.util.Streamable;
 
 public class TaskMessage implements Serializable {
 	public static enum MessageType {ADD_TASK, REMOVE_TASK, GLOBAL_PAUSE, GLOBAL_START, 
-			TASK_RESULT, TASK_REQUEST, TASK_RESPONSE, TASK_STEAL, TASK_STATE};
+			TASK_RESULT, TASK_ERROR, TASK_REQUEST, TASK_RESPONSE, TASK_STATE, TASK_STEAL, NODE_STEAL};
 	protected MessageType type;
 
 	public TaskMessage(MessageType type){

@@ -1,11 +1,11 @@
 package node;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+
+
+import message.*;
 
 import org.jgroups.Address;
 import org.jgroups.JChannel;
@@ -16,17 +16,13 @@ import event.Eventable;
 
 import algorithm.SchedulerStrategy;
 
-import task.FutureTaskResult;
-import task.Task;
-import task.TaskID;
+import task.*;
 
 public class MasterNode extends TasksNode implements Master {
 	
 
 	private SchedulerStrategy schStrat;
-	
 	private Map<TaskID,FutureTaskResult> tasksResults = new ConcurrentHashMap<TaskID,FutureTaskResult>();
-	
 	private Map<TaskID,Task> tasksMap = new ConcurrentHashMap<TaskID,Task>();
 
 
@@ -41,18 +37,11 @@ public class MasterNode extends TasksNode implements Master {
 	public MasterNode(Eventable e,SchedulerStrategy schStrat){
 		super(e);
 		this.schStrat = schStrat;
-		this.localState = PAUSE;
-		this.finished = true;
-	}
-	
-	
-	
-	@Override
-	public void receive(Message arg0) {
-		// TODO Auto-generated method stub
-
+		setLocalState(PAUSE);
+		setFinished(true);
 	}
 
+	
 
 	@Override
 	public void viewAccepted(View arg0) {
@@ -72,6 +61,78 @@ public class MasterNode extends TasksNode implements Master {
 	}
 
 
+	
+	@Override
+	public void receive(Message msg) {
+		// TODO Complete
+		TaskMessage tmsg = (TaskMessage) msg.getObject();
+		switch (tmsg.getType()){
+		case TASK_RESULT :
+				handleTaskResult(((TaskResult)tmsg));
+			break;
+		case TASK_REQUEST :
+			TaskID id = ((TaskRequest)tmsg).getId();
+			taskResponse(id,msg.getSrc());
+			break;
+		case TASK_ERROR :
+			handleTaskError((TaskError)tmsg);
+		default:
+			super.receive(msg);
+		}
+	}
+		
+	
+	/**
+	 * Handle the TASK_RESULT message
+	 * TASK_RESULT contains the result of the executed task
+	 * @param entry
+	 */
+	private void handleTaskResult(TaskResult msg){
+		//TODO Handle the Future. 
+		//Notify nodes of the task completed? Or the Slave is the responsible?
+	}
+	
+	
+	/**
+	 * Handle the TASK_ERROR message
+	 * TASK_ERROR contains a throwable catch in the execution of the task  
+	 */
+	private void handleTaskError(TaskError msg){
+		//TODO
+	}
+	
+	
+	/**
+	 * Sends the response to the src of the message with the task.
+	 * Used when a TaskRequest arrives
+	 * @param id
+	 * @param src
+	 */
+	private void taskResponse(TaskID id, Address src){
+		if ( id== null)
+			e.eventError("Null ID received in a Task Request");
+		else{
+			try {
+				Task t = null;
+				synchronized(tasksMap){
+					for (TaskID tid : tasksMap.keySet())
+						if (tid.equals(id)){
+							t = tasksMap.get(tid);
+							break;
+						}							
+//						t = tasksMap.get(id);
+				}
+				if (t != null){
+					channel.send(src, new TaskResponse(t,id));
+					e.eventTaskResponse(id);
+				}
+				else
+					e.eventError("Task request with Error, no task assigned to the ID " + id.toString());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
 	
 }
