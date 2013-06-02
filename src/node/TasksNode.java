@@ -7,6 +7,7 @@ import message.TaskMessage;
 import message.TaskNotificationMessage;
 
 
+import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
 import org.jgroups.ReceiverAdapter;
@@ -20,6 +21,9 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	protected Eventable e;
 
 	protected Vector<TaskEntry> tasksIndex = new Vector<TaskEntry>();
+
+	//Not used in this version
+	protected Vector<NodeInformation> nodesInfo = new Vector<NodeInformation>();
 	
 	protected JChannel channel;
 	protected View actualView;
@@ -28,8 +32,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	private boolean localState;
 	private boolean finished;
 	
-	public static boolean WORKING = true ;
-	public static boolean PAUSE = false ;
+
 	
 	
 	public TasksNode(Eventable e){
@@ -168,6 +171,25 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	public void sendInformation(){
 	}
 	
+	/**
+	 * Return a Vector cotaining the TaskEntries that matches the owner and handler 
+	 * @param owner
+	 * @param handler
+	 * @return
+	 */
+	protected synchronized Vector<TaskEntry> getTasks(Address owner,Address handler){
+		Vector<TaskEntry> result = new Vector<TaskEntry>();
+		for (TaskEntry e : tasksIndex)
+			// Add to the result if the owner is the same and if the handlers are null or the same
+			if (e.getOwner().equals(owner)) 
+				if (handler == null && e.getHandler() == null)
+					result.add(e);
+				else if (handler != null && e.getHandler() != null && e.getHandler().equals(handler))
+					result.add(e);
+		return result;
+	}
+	
+	
 	public boolean isLocalState() {
 		return localState;
 	}
@@ -175,7 +197,11 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	public void setLocalState(boolean localState) {
 		this.localState = localState;
 	}
-
+	
+	public boolean getLocalState(){
+		return localState;
+	}
+	
 	public boolean isFinished() {
 		return finished;
 	}

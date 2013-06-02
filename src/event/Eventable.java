@@ -16,7 +16,7 @@ public interface Eventable {
 		
 		public abstract void eventTaskComplete(TaskEntry entry);
 		
-		public abstract void eventTaskResult(TaskEntry entry);
+		public abstract void eventTaskResult(TaskID id);
 		
 		public abstract void eventTaskExecution(TaskEntry entry);
 		

@@ -2,10 +2,12 @@ package node;
 
 
 import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 
 import message.*;
+import message.TaskMessage.MessageType;
 
 import org.jgroups.Address;
 import org.jgroups.JChannel;
@@ -44,23 +46,66 @@ public class MasterNode extends TasksNode implements Master {
 	
 
 	@Override
-	public void viewAccepted(View arg0) {
-		// TODO Auto-generated method stub
+	public void viewAccepted(View view) {
+		super.viewAccepted(view);
+		//Schedule tasks that has no handler and the owner is this
+		scheduleTasks(getTasks(channel.getAddress(),null));
 	}
+	
 
 	@Override
 	public FutureTaskResult<Object> submit(Task t) {
-		// TODO Auto-generated method stub
-		return null;
+		//Create task ID and Entry
+		TaskID id = TaskID.newTask(channel.getAddress());
+		tasksMap.put(id, t);
+		TaskEntry entry = new TaskEntry(id,null);
+		//Schedule the task
+		schStrat.assign(entry, channel.getView());
+		
+		//Notify the cluster that a new task exists
+		try {
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.ADD_TASK,entry));
+		} catch (Exception e1) {
+			e.eventError("Submit Failed. Are you connected to the cluster?");
+			tasksMap.remove(id);
+			return null;
+		}
+		
+		//Return a future
+		FutureTaskResult<Object> futureTask = new FutureTaskResult<Object>(id,this);
+		tasksResults.put(id, futureTask);
+		return futureTask;
 	}
 
 	@Override
 	public void cancel(TaskID id) {
-		// TODO Auto-generated method stub
-
+		tasksMap.remove(id);
+		tasksResults.get(id).cancel(true);
+		tasksResults.remove(id);
+		
+		try{
+			//Creates a new TaskEntry to avoid looking for the real Entry in tasksIndex
+			channel.send(null, new TaskNotificationMessage(MessageType.REMOVE_TASK,new TaskEntry(id,channel.getAddress())));
+		} catch (Exception e1){
+			e.eventError("Submit Failed. Are you connected to the cluster?");
+		}
 	}
 
+	/**
+	 * Assigns a handler to ALL the tasks that the node owns.
+	 */
+	private void scheduleTasks(){
+		scheduleTasks(tasksIndex);
+	}
 
+	/**
+	 * Assigns a handler to the @tasks that the node owns.
+	 * Uses the Scheduler Strategy.
+	 * @param tasks : A vector of the tasks to schedule
+	 */
+	private void scheduleTasks(Vector<TaskEntry> tasks){
+		schStrat.assign(tasks,nodesInfo);
+	}
 	
 	@Override
 	public void receive(Message msg) {
@@ -88,8 +133,9 @@ public class MasterNode extends TasksNode implements Master {
 	 * @param entry
 	 */
 	private void handleTaskResult(TaskResultMessage msg){
-		//TODO Handle the Future. 
-		//Notify nodes of the task completed? Or the Slave is the responsible?
+		FutureTaskResult<Object> future = tasksResults.get(msg.getTaskID());
+		future.set(msg.getResult());
+		e.eventTaskResult(msg.getTaskID());
 	}
 	
 	

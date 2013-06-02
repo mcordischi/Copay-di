@@ -1,5 +1,6 @@
 package node;
 
+import java.io.ObjectInputStream.GetField;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,7 +10,9 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import message.TaskMessage;
 import message.TaskNotificationMessage;
+import message.TaskRequestMessage;
 import message.TaskResponseMessage;
+import message.TaskResultMessage;
 
 import org.jgroups.Message;
 
@@ -30,12 +33,12 @@ import algorithm.StealingStrategy;
  */
 public abstract class SlaveNode extends TasksNode implements Slave {
 
-	private final ExecutorService executor;
-	private int maxThreads;
+	protected final ExecutorService executor;
+	protected int maxThreads;
 	
 
-	private Vector<TaskEntry> pendingTasks = new Vector<TaskEntry>();
-	private Map<TaskEntry,Future<Object> > workingTasks = new ConcurrentHashMap<TaskEntry, Future<Object> >();
+	protected Vector<TaskEntry> pendingTasks = new Vector<TaskEntry>();
+	protected Map<TaskEntry,Future<Object> > workingTasks = new ConcurrentHashMap<TaskEntry, Future<Object> >();
 	
 	
 	public SlaveNode(Eventable e, int maxThreads) {
@@ -51,13 +54,44 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	protected abstract void start();
 	
 	
+	
+	/**
+	 * Sends a request to the owner of the task, asking for the task. The answer is handle in {@link #receive(Message)}.
+	 * @param entry
+	 * @param task
+	 */
+	public void requestTask(TaskEntry entry){
+		entry.setState(TaskEntry.StateType.WORKING);
+		e.eventTaskRequest(entry.getId());
+		synchronized(pendingTasks){
+			pendingTasks.add(entry);
+		}
+		try {
+			//Notify cluster that the node is going to start the execution of the task
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STATE,entry));
+			//Request the task to the owner
+			channel.send(entry.getOwner(), new TaskRequestMessage(TaskMessage.MessageType.TASK_REQUEST, entry.getId()));
+		} catch (Exception e1) {
+			e.eventError("Request Task Failed. Are you still connected to the cluster?");
+			synchronized(entry){
+				entry.setState(TaskEntry.StateType.UNDEFINED);
+			}
+			synchronized(pendingTasks){
+				pendingTasks.remove(entry);
+			}
+		}
+
+	}
+	
 	/**
 	 * calls start() if new local state is true
 	 */
 	@Override
 	public void setLocalState(boolean localState) {
-		// TODO Auto-generated method stub
-
+		boolean oldLocalState = getLocalState();
+		super.setLocalState(localState);
+		if( oldLocalState == PAUSE && !isFinished() && localState == WORKING)
+			start();
 	}
 
 
@@ -120,14 +154,14 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			entry.setState(TaskEntry.StateType.FINISHED);
 		}
 		e.eventTaskComplete(entry);
-		//Notifies the cluster of the state and the result
+		//Notifies the cluster of the state and the result and sends to the owner the result
 		try {
 			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_RESULT,entry));
+			channel.send(entry.getOwner(), new TaskResultMessage(result, entry.getId()));
 		} catch (Exception e1) {
 			e.eventError("Send result failed. Are you still connected to the cluster?");
 		}
 
-		//TODO send Result to owner
 	}
 	
 }

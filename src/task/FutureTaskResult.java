@@ -2,6 +2,7 @@ package task;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -14,6 +15,7 @@ public class FutureTaskResult<V> implements Future<V> {
 	boolean done = false;
 	Master master;
 	TaskID id;
+	private final Semaphore available = new Semaphore(0);
 	
 	public FutureTaskResult (TaskID id){
 		master = null;
@@ -36,14 +38,16 @@ public class FutureTaskResult<V> implements Future<V> {
 	
 	@Override
 	public V get() throws InterruptedException, ExecutionException {
-		// TODO Block if result not available
+		if (done)
+			return result;
+		available.acquire();
 		return result;
 	}
 
 	@Override
 	public V get(long arg0, TimeUnit arg1) throws InterruptedException,
 			ExecutionException, TimeoutException {
-		// TODO Auto-generated method stub
+		available.acquire();
 		return result;
 	}
 
@@ -61,7 +65,7 @@ public class FutureTaskResult<V> implements Future<V> {
 	public void set(V result){
 		this.result = result;
 		done = true;
-		//TODO notify
+		available.release();
 	}
 
 	

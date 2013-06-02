@@ -5,14 +5,17 @@ import task.*;
 public interface Master extends Node{
 	
 	/**
-	 * Submits a task to the cluster, returns the "Ticket" to the answer.
-	 * @param t
-	 * @param timeout
-	 * @return
-	 * @throws Exception
+	 * Submits a task to the cluster, returns a Future.
+	 * @param t The task
+	 * @return the future
 	 */
 	public abstract FutureTaskResult<Object> submit(Task t);
 	
+	
+	/**
+	 * Sends a REMOVE_TASK signal to the cluster 
+	 * @param id
+	 */
 	public abstract void cancel(TaskID id);
 
 }
