@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import message.*;
 import message.TaskMessage.MessageType;
+import node.NodeInformation.NodeType;
 
 import org.jgroups.Address;
 import org.jgroups.JChannel;
@@ -41,6 +42,7 @@ public class MasterNode extends TasksNode implements Master {
 		this.schStrat = schStrat;
 		setLocalState(PAUSE);
 		setFinished(true);
+		nodeType = NodeType.MASTER;
 	}
 
 	
@@ -60,7 +62,7 @@ public class MasterNode extends TasksNode implements Master {
 		tasksMap.put(id, t);
 		TaskEntry entry = new TaskEntry(id,null);
 		//Schedule the task
-		schStrat.assign(entry, channel.getView());
+		schStrat.assign(entry, nodesInfo);
 		
 		//Notify the cluster that a new task exists
 		try {
@@ -109,7 +111,6 @@ public class MasterNode extends TasksNode implements Master {
 	
 	@Override
 	public void receive(Message msg) {
-		// TODO Complete
 		TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case TASK_RESULT :
@@ -121,6 +122,7 @@ public class MasterNode extends TasksNode implements Master {
 			break;
 		case TASK_ERROR :
 			handleTaskError((TaskErrorMessage)tmsg);
+			break;
 		default:
 			super.receive(msg);
 		}
@@ -180,5 +182,5 @@ public class MasterNode extends TasksNode implements Master {
 		}
 	}
 
-	
+
 }

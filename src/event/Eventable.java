@@ -1,5 +1,7 @@
 package event;
 
+import node.NodeInformation;
+
 import org.jgroups.Address;
 
 import task.*;
@@ -43,4 +45,6 @@ public interface Eventable {
 		public abstract void eventWarning(String str);
 		
 		public abstract void eventError(String str);
+		
+		public abstract void eventInformation(NodeInformation i);
 }

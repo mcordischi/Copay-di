@@ -2,6 +2,7 @@ package node;
 
 import java.io.Serializable;
 
+import message.NodeInfoMessage;
 import message.TaskMessage;
 
 import org.jgroups.Address;
@@ -28,7 +29,7 @@ public interface NodeInformation extends Serializable{
 		public abstract boolean getWorkingState();
 		
 		
-		public static enum NodeType {MASTER,SLAVE,CONTROLLER};
+		public static enum NodeType {MASTER,SLAVE,MONITOR};
 		
 		/**
 		 *	returns which type of node it is 
@@ -45,10 +46,10 @@ public interface NodeInformation extends Serializable{
 		/**
 		 * Send a request to the node to update the information
 		 */
-		public abstract void forceUpdate(Channel c);
+		public abstract void forceUpdate(Channel c) throws Exception;
 		
 		/**
 		 * Updates the information
 		 */
-		public abstract void update(TaskMessage m);
+		public abstract void update(NodeInformation update);
 }

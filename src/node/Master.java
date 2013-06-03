@@ -18,4 +18,6 @@ public interface Master extends Node{
 	 */
 	public abstract void cancel(TaskID id);
 
+	
+
 }

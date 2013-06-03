@@ -13,6 +13,7 @@ import message.TaskNotificationMessage;
 import message.TaskRequestMessage;
 import message.TaskResponseMessage;
 import message.TaskResultMessage;
+import node.NodeInformation.NodeType;
 
 import org.jgroups.Message;
 
@@ -45,6 +46,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		super(e);
 		this.maxThreads = maxThreads;
 		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
+		nodeType = NodeType.SLAVE;
 	}
 	
 	
@@ -115,7 +117,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 * Handles the task and calls {@link #sendResult(Object, TaskEntry)} to return the result via multicast message
 	 * @throws Exception 
 	 */
-	public void handleTask(TaskID id, Task task){
+	protected void handleTask(TaskID id, Task task){
 		TaskEntry entry = null;
 		synchronized(pendingTasks){
 			for (TaskEntry i : pendingTasks){
@@ -143,13 +145,31 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	}
 	
 	
+	/**
+	 * Handle the REMOVE_TASK message
+	 */
+	@Override
+	protected void handleRemoveTask(TaskEntry entry){
+		synchronized(pendingTasks){
+			pendingTasks.remove(entry);
+		}
+		synchronized(workingTasks){
+			if (workingTasks.containsKey(entry)){
+				Future taskF = workingTasks.get(entry);
+				taskF.cancel(true);
+				workingTasks.remove(entry);
+			}
+		}
+		super.handleRemoveTask(entry);
+	}
+	
 	
 	/**
 	 * Send a multicast message with the result of a task
 	 * @param result: the result of the task
 	 * @param entry: the task entry
 	 */
-	public void sendResult(Object result, TaskEntry entry ){
+	protected void sendResult(Object result, TaskEntry entry ){
 		synchronized(entry){
 			entry.setState(TaskEntry.StateType.FINISHED);
 		}

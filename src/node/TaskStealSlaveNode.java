@@ -45,7 +45,7 @@ public class TaskStealSlaveNode extends SlaveNode {
 	 * calls a stealing algorithm to steal from other node.
 	 *
 	 */
-	public synchronized TaskEntry fetchTask(){
+	protected synchronized TaskEntry fetchTask(){
 		Address localAddress = channel.getAddress();
 		for (TaskEntry entry : tasksIndex){
 			if (entry.getHandler().equals(localAddress) && entry.getState().equals(TaskEntry.StateType.SUBMITTED))

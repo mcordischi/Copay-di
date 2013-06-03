@@ -1,7 +1,9 @@
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import algorithm.*;
@@ -20,38 +22,52 @@ public class Main {
 		Eventable di = new DebugInterface();
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
 		StealingStrategy stlStrat = new NullStealingStrategy();
-		Peer peer = new Peer(di,schStrat,stlStrat,2);
-		peer.connect("network");
+
 		
+		Slave slave = new TaskStealSlaveNode(di,stlStrat,2);
+		slave.connect("network");
+		
+		BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
+		
+        System.out.print("Press enter connect master"); System.out.flush();
+        in.readLine().toLowerCase();
+		
+		Master master = new MasterNode(di,schStrat);
+		master.connect("network");
+
+        System.out.print("Press enter to Notify information"); System.out.flush();
+        in.readLine().toLowerCase();
+		
+		((TasksNode)master).notifyInformation();
+		((TasksNode)master).notifyView();
 		
 		Vector<Task> tasks = new Vector<Task>();
 		
-		BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
+	
         System.out.print("Press enter to start loading tasks (Y/n) "); System.out.flush();
         String str = in.readLine().toLowerCase();
         
-        TaskID id = null;
+        Set<FutureTaskResult> set = new HashSet<FutureTaskResult>();
 		if (str.startsWith("y")){
 		
 			for (int i= 0 ; i<10;i++){
 				Task t= new StringTask("t" + i);
 				tasks.add(t);
-				id = peer.submit(t);
+				set.add(master.submit(t));
 			}
 		}
-		
-		for (int i=0; i<1000000; i++)
-			;
-		
-		Map<TaskID,Task> map = peer.getTasksMap();
-		
-		System.out.println("MAP SIZE :" + map.size());
 
+		
+		
         System.out.print("Press enter to start the system"); System.out.flush();
         in.readLine().toLowerCase();
 		
-		peer.setGlobalState(true);
-		peer.setLocalState(true);
+		master.setGlobalState(true);
+		slave.setLocalState(true);
+		
+		
+		for (FutureTaskResult tr : set)
+			System.out.println(tr.getTaskID() +  " RESULT " + tr.get().toString());
 
 	}
 

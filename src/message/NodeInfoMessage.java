@@ -10,4 +10,8 @@ public class NodeInfoMessage extends TaskMessage {
 		super(TaskMessage.MessageType.NODE_INFORMATION);
 		this.info = info;
 	}
+	
+	public NodeInformation getInfo(){
+		return info;
+	}
 }

@@ -1,5 +1,7 @@
 package event;
 
+import node.NodeInformation;
+
 import org.jgroups.Address;
 
 import task.TaskEntry;
@@ -104,10 +106,21 @@ public class DebugInterface implements Eventable {
 		System.out.println("The node finished its jobs");		
 	}
 
+
 	@Override
-	public void eventTaskResult(TaskEntry entry) {
-		System.out.println("Task Result Received. \t" + entry.getId().toString() + "\n\t" + entry.getResult().toString());
+	public void eventTaskResult(TaskID id) {
+		System.out.println("Task Result Received: \t" + id.toString() );
 		
+	}
+
+	@Override
+	public void eventInformation(NodeInformation i) {
+		System.out.print("NODE INFO: " + i.getAddress().toString() + " is a " + i.getNodeType() 
+				+ " and is ");
+		if (i.getWorkingState())
+			System.out.println("working with " + i.getWorkingTasks() + " tasks.");
+		else
+			System.out.println("NOT working.");
 	}
 
 }
