@@ -44,6 +44,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	
 	public TasksNode(Eventable e){
 		this.e = e;
+		nodeType = NodeType.UNDEFINED;
 	}
 	
 	@Override
@@ -57,7 +58,6 @@ public class TasksNode extends ReceiverAdapter implements Node {
 			e.eventError("Could not connect to cluster");
 			e1.printStackTrace();
 		}
-		info = new TasksNodeInformation(channel.getAddress(),nodeType,localState);
 		sendInformation();
 	}
 
@@ -178,12 +178,15 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	private void updateNodeInformation(NodeInfoMessage tmsg) {
 		NodeInformation i = tmsg.getInfo();
 		synchronized(nodesInfo){
-			if (!nodesInfo.contains(i))
+			boolean contains = false;
+			for(NodeInformation ni : nodesInfo)
+				if (ni.equals(i)){
+					ni.update(i);
+					contains = true;
+					break;
+				}
+			if (!contains)
 				nodesInfo.add(i);
-			else
-				for(NodeInformation ni : nodesInfo)
-					if (ni.equals(i))
-						ni.update(i);
 		}
 	}
 	
@@ -191,41 +194,47 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	 * Sends updated information about the Node to the cluster
 	 */
 	public void sendInformation(){
+		if (info == null)
+			info = new TasksNodeInformation(channel.getAddress(),nodeType,localState);
 		try{
 			channel.send(null,new NodeInfoMessage(info));
 		} catch (Exception e1){
-			e.eventError("Information Response failed. Are you still connected to the cluster?");
+			e.eventError("Information send failed. Are you still connected to the cluster?");
 		}
 	}
 
+	/**
+	 * WARNING, NOT syncrhonized structures.
+	 */
 	@Override
 	public void getState(OutputStream output) throws Exception {
 		DataOutputStream out = new DataOutputStream(output);
-		synchronized(tasksIndex){
-			Util.objectToStream(tasksIndex, out);
-		}
-		
-		synchronized(nodesInfo){
-			Util.objectToStream(nodesInfo, out);
-		}
-		
+		Util.objectToStream(tasksIndex, out);
+		Util.objectToStream(nodesInfo, out);
 		Util.objectToStream(globalState, out);
-		e.eventWarning(info.getAddress() + " is sending info");
+	//	e.eventWarning(info.getAddress() + " is sending info");
 	}
 	
+	/**
+	 * WARNING, NOT syncrhonized structures.
+	 */
 	@Override
 	public void setState(InputStream input) throws Exception {
 		Vector<TaskEntry> inEntryVector = (Vector<TaskEntry>)Util.objectFromStream(new DataInputStream(input));
 		Vector<NodeInformation> inInfoVector = (Vector<NodeInformation>)Util.objectFromStream(new DataInputStream(input));
 		if (inEntryVector != null && inInfoVector != null)
 			globalState = (boolean)Util.objectFromStream(new DataInputStream(input));
+		updateState(inEntryVector,inInfoVector);
+	}
+	
+	private void updateState(Vector<TaskEntry> inEntry, Vector<NodeInformation> inInfo){
 		synchronized(tasksIndex){
-			tasksIndex.addAll(inEntryVector);
+			tasksIndex.addAll(inEntry);
 		}
 		synchronized(nodesInfo){
-			nodesInfo.addAll(inInfoVector);
+			nodesInfo.addAll(inInfo);
 		}
-		e.eventWarning(info.getAddress() + " is receiving info");
+		e.eventWarning("A new node is receiving info");
 	}
 	
 //GETTERS or SETTERS	
@@ -284,5 +293,8 @@ public class TasksNode extends ReceiverAdapter implements Node {
 			e.eventNodeAvailable(a);
 	}
 	
+	public void forceUpdate() throws Exception{
+		info.forceUpdate(channel);
+	}
 	
 }

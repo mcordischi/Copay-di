@@ -109,6 +109,8 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			else
 				handleTask(tId, task);
 			break;
+		default:
+			super.receive(msg);
 		}
 	}
 	

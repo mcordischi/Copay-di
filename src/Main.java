@@ -41,20 +41,38 @@ public class Main {
 		((TasksNode)master).notifyInformation();
 		((TasksNode)master).notifyView();
 		
-		Vector<Task> tasks = new Vector<Task>();
+		System.out.println("\n\nSLAVE: \n");
 		
-	
+		((TasksNode)slave).notifyInformation();
+		((TasksNode)slave).notifyView();
+		
+		
+		System.out.println("Forcing to update ");
+		
+		((TasksNode)slave).forceUpdate();
+		((TasksNode)master).forceUpdate();
+
+		
+        System.out.print("Press enter to Notify information after forced update"); System.out.flush();
+        in.readLine().toLowerCase();
+		
+		((TasksNode)master).notifyInformation();
+		((TasksNode)master).notifyView();
+		
+		System.out.println("\n\nSLAVE: \n");
+		
+		((TasksNode)slave).notifyInformation();
+		((TasksNode)slave).notifyView();
+		
+		
         System.out.print("Press enter to start loading tasks (Y/n) "); System.out.flush();
         String str = in.readLine().toLowerCase();
         
         Set<FutureTaskResult> set = new HashSet<FutureTaskResult>();
 		if (str.startsWith("y")){
-		
-			for (int i= 0 ; i<10;i++){
-				Task t= new StringTask("t" + i);
-				tasks.add(t);
-				set.add(master.submit(t));
-			}
+			for (int i= 0 ; i<10;i++)
+				set.add(master.submit(new StringTask("t" + i)));
+			
 		}
 
 		

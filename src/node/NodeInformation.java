@@ -29,7 +29,7 @@ public interface NodeInformation extends Serializable{
 		public abstract boolean getWorkingState();
 		
 		
-		public static enum NodeType {MASTER,SLAVE,MONITOR};
+		public static enum NodeType {MASTER,SLAVE,MONITOR,MASTER_SLAVE,UNDEFINED};
 		
 		/**
 		 *	returns which type of node it is 

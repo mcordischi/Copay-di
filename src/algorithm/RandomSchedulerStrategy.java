@@ -22,12 +22,12 @@ public class RandomSchedulerStrategy implements SchedulerStrategy {
 
 	@Override
 	public void assign(TaskEntry task, Collection<NodeInformation> nodesInfo) {
-		NodeInformation[] array = (NodeInformation[]) nodesInfo.toArray();
+		Object[] array = nodesInfo.toArray();
 		boolean done = false;
 		do{
 			int position= random.nextInt(array.length) ;
-			if (array[position].getNodeType() == NodeInformation.NodeType.SLAVE){
-				task.setHandler(array[position].getAddress());
+			if (((NodeInformation)array[position]).getNodeType() == NodeInformation.NodeType.SLAVE){
+				task.setHandler(((NodeInformation)array[position]).getAddress());
 				done = true;
 			}
 		} while(!done);
