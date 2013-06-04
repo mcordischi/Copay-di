@@ -145,6 +145,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		else {
 			if (oldEntry.getState() != TaskEntry.StateType.FINISHED){
 				oldEntry.setState(entry.getState());
+				oldEntry.setHandler(entry.getHandler());
 				e.eventTaskUpdate(entry);
 			}
 		}

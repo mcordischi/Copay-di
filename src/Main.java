@@ -22,7 +22,7 @@ public class Main {
 		Eventable diMaster = new DebugInterface("MTR");
 		Eventable diSlave = new DebugInterface("SLV");
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
-		StealingStrategy stlStrat = new NullStealingStrategy();
+		TaskStealingStrategy stlStrat = new NullStealingStrategy();
 
 		
 		Slave slave = new TaskStealSlaveNode(diSlave,stlStrat,2);

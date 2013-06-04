@@ -4,7 +4,7 @@ import java.util.Collection;
 
 import task.TaskEntry;
 
-public class NullStealingStrategy implements StealingStrategy {
+public class NullStealingStrategy implements TaskStealingStrategy {
 
 	@Override
 	public TaskEntry steal(Collection<TaskEntry> tasks) {

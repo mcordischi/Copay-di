@@ -6,15 +6,15 @@ import message.TaskNotificationMessage;
 import org.jgroups.Address;
 
 import task.TaskEntry;
-import algorithm.StealingStrategy;
+import algorithm.TaskStealingStrategy;
 import event.Eventable;
 
 public class TaskStealSlaveNode extends SlaveNode {
 
-	StealingStrategy stlStrat;
+	TaskStealingStrategy stlStrat;
 	
 	
-	public TaskStealSlaveNode(Eventable e, StealingStrategy stlStrat ,int maxThreads) {
+	public TaskStealSlaveNode(Eventable e, TaskStealingStrategy stlStrat ,int maxThreads) {
 		super(e, maxThreads);
 		this.stlStrat = stlStrat;
 	}

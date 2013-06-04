@@ -29,8 +29,6 @@ public class MasterNode extends TasksNode implements Master {
 	private Map<TaskID,Task> tasksMap = new ConcurrentHashMap<TaskID,Task>();
 
 
-	public static boolean WORKING = true ;
-	public static boolean PAUSE = false ;
 	
 	
 // ******************************
@@ -45,7 +43,14 @@ public class MasterNode extends TasksNode implements Master {
 		nodeType = NodeType.MASTER;
 	}
 
-	
+
+	public MasterNode(Eventable e){
+		super(e);
+		this.schStrat = null;
+		setLocalState(PAUSE);
+		setFinished(true);
+		nodeType = NodeType.MASTER;
+	}
 
 	@Override
 	public void viewAccepted(View view) {

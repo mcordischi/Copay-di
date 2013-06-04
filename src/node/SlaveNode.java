@@ -1,6 +1,7 @@
 package node;
 
 import java.io.ObjectInputStream.GetField;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,22 +9,26 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
+import message.NodeStealRequestMessage;
 import message.TaskMessage;
+import message.TaskMessage.MessageType;
 import message.TaskNotificationMessage;
 import message.TaskRequestMessage;
 import message.TaskResponseMessage;
 import message.TaskResultMessage;
 import node.NodeInformation.NodeType;
 
+import org.jgroups.Address;
 import org.jgroups.Message;
 
 import event.Eventable;
 
 import task.Task;
 import task.TaskEntry;
+import task.TaskEntry.StateType;
 import task.TaskID;
 
-import algorithm.StealingStrategy;
+import algorithm.TaskStealingStrategy;
 
 
 /**
@@ -115,6 +120,8 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			else
 				handleTask(tId, task);
 			break;
+		case NODE_STEAL_REQUEST:
+			handleNodeSteal((NodeStealRequestMessage)tmsg, msg.getSrc());
 		default:
 			super.receive(msg);
 		}
@@ -169,6 +176,34 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			}
 		}
 		super.handleRemoveTask(entry);
+	}
+	
+	/**
+	 * Handle the NODE_STEAL_REQUEST
+	 * Searches for pending tasks that are assigned to itself and updates them to 
+	 * @param src
+	 */
+	protected void handleNodeSteal(NodeStealRequestMessage m, Address stealer){
+		//TODO Test
+		ArrayList<TaskEntry> array = new ArrayList<TaskEntry>();
+		int qty = m.getTasksRequested();
+		synchronized(tasksIndex){
+			for (TaskEntry t : tasksIndex)
+				if (array.size() == qty)
+					break;
+				else if (t.getHandler().equals(info.getAddress()) && 
+						(t.getState() == StateType.SUBMITTED || t.getState() == StateType.UNDEFINED )){
+					array.add(new TaskEntry(t.getId(),stealer));
+					
+				}
+		}
+		for (TaskEntry t : array){
+			try {
+				channel.send(null, new TaskNotificationMessage(MessageType.TASK_STATE, t));
+			} catch (Exception e1) {
+				e.eventError("Couldn't make an update on a Task state. Are you still connected to the cluster?");
+			}
+		}
 	}
 	
 	
