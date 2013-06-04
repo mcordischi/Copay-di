@@ -96,6 +96,12 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			start();
 	}
 
+	
+	@Override
+	protected void setGlobalState(boolean state){
+		super.setGlobalState(state);
+		start();
+	}
 
 	@Override
 	public void receive(Message msg) {
@@ -178,7 +184,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		e.eventTaskComplete(entry);
 		//Notifies the cluster of the state and the result and sends to the owner the result
 		try {
-			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_RESULT,entry));
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STATE,entry));
 			channel.send(entry.getOwner(), new TaskResultMessage(result, entry.getId()));
 		} catch (Exception e1) {
 			e.eventError("Send result failed. Are you still connected to the cluster?");

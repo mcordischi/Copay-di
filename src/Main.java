@@ -19,12 +19,13 @@ public class Main {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		Eventable di = new DebugInterface();
+		Eventable diMaster = new DebugInterface("MTR");
+		Eventable diSlave = new DebugInterface("SLV");
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
 		StealingStrategy stlStrat = new NullStealingStrategy();
 
 		
-		Slave slave = new TaskStealSlaveNode(di,stlStrat,2);
+		Slave slave = new TaskStealSlaveNode(diSlave,stlStrat,2);
 		slave.connect("network");
 		
 		BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
@@ -32,37 +33,39 @@ public class Main {
         System.out.print("Press enter connect master"); System.out.flush();
         in.readLine().toLowerCase();
 		
-		Master master = new MasterNode(di,schStrat);
+		Master master = new MasterNode(diMaster,schStrat);
 		master.connect("network");
 
-        System.out.print("Press enter to Notify information"); System.out.flush();
-        in.readLine().toLowerCase();
+//        System.out.print("Press enter to Notify information"); System.out.flush();
+//        in.readLine().toLowerCase();
+//		
+//        System.out.println("\n\nMaster: \n");
+//        
+//		((TasksNode)master).notifyInformation();
+//		((TasksNode)master).notifyView();
+//		
+//		System.out.println("\n\nSLAVE: \n");
+//		
+//		((TasksNode)slave).notifyInformation();
+//		((TasksNode)slave).notifyView();
+//		
 		
-		((TasksNode)master).notifyInformation();
-		((TasksNode)master).notifyView();
-		
-		System.out.println("\n\nSLAVE: \n");
-		
-		((TasksNode)slave).notifyInformation();
-		((TasksNode)slave).notifyView();
-		
-		
-		System.out.println("Forcing to update ");
-		
-		((TasksNode)slave).forceUpdate();
-		((TasksNode)master).forceUpdate();
-
-		
-        System.out.print("Press enter to Notify information after forced update"); System.out.flush();
-        in.readLine().toLowerCase();
-		
-		((TasksNode)master).notifyInformation();
-		((TasksNode)master).notifyView();
-		
-		System.out.println("\n\nSLAVE: \n");
-		
-		((TasksNode)slave).notifyInformation();
-		((TasksNode)slave).notifyView();
+//		System.out.println("Forcing to update ");
+//		
+//		((TasksNode)slave).forceUpdate();
+//		((TasksNode)master).forceUpdate();
+//
+//		
+//        System.out.print("Press enter to Notify information after forced update"); System.out.flush();
+//        in.readLine().toLowerCase();
+//		
+//		((TasksNode)master).notifyInformation();
+//		((TasksNode)master).notifyView();
+//		
+//		System.out.println("\n\nSLAVE: \n");
+//		
+//		((TasksNode)slave).notifyInformation();
+//		((TasksNode)slave).notifyView();
 		
 		
         System.out.print("Press enter to start loading tasks (Y/n) "); System.out.flush();
@@ -80,8 +83,8 @@ public class Main {
         System.out.print("Press enter to start the system"); System.out.flush();
         in.readLine().toLowerCase();
 		
-		master.setGlobalState(true);
-		slave.setLocalState(true);
+		master.setSystemState(Node.WORKING);
+		slave.setLocalState(Node.WORKING);
 		
 		
 		for (FutureTaskResult tr : set)

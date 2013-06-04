@@ -25,7 +25,7 @@ public interface Node extends Receiver {
 		/**
 		 * Sets the global state to WORKING or PAUSE.
 		 */
-		public abstract void setGlobalState(boolean newState);
+		public abstract void setSystemState(boolean newState);
 		
 		public static boolean WORKING = true ;
 		public static boolean PAUSE = false ;

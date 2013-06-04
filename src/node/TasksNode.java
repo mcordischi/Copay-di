@@ -45,6 +45,8 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	public TasksNode(Eventable e){
 		this.e = e;
 		nodeType = NodeType.UNDEFINED;
+		finished = false;
+		localState = WORKING;
 	}
 	
 	@Override
@@ -73,13 +75,16 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		return globalState;	
 	}
 	
-	public void setGlobalState(boolean globalState){
-		this.globalState = globalState;
+	public void setSystemState(boolean globalState){
+		boolean oldState = getGlobalState();
+		setGlobalState(globalState);
 		try {
-			if (globalState)
-				channel.send(null,new TaskMessage(TaskMessage.MessageType.GLOBAL_START));
-			else
-				channel.send(null,new TaskMessage(TaskMessage.MessageType.GLOBAL_PAUSE));
+			if (oldState != globalState){
+				if (globalState)
+					channel.send(null,new TaskMessage(TaskMessage.MessageType.GLOBAL_START));
+				else
+					channel.send(null,new TaskMessage(TaskMessage.MessageType.GLOBAL_PAUSE));
+			}
 		} catch (Exception e1) {
 			e.eventError("Could not set Global State. Are you still connected to the cluster?");
 		}
@@ -96,12 +101,10 @@ public class TasksNode extends ReceiverAdapter implements Node {
 			handleRemoveTask(((TaskNotificationMessage)tmsg).getEntry());
 			break;
 		case GLOBAL_START :
-			globalState= WORKING;
-			e.eventSystemResume();
+			setGlobalState(WORKING);
 			break;
 		case GLOBAL_PAUSE :
-			globalState= PAUSE;
-			e.eventSystemPause();
+			setGlobalState(PAUSE);
 			break;
 		case TASK_STATE :
 			if (!msg.getSrc().equals(channel.getAddress()))
@@ -128,6 +131,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	 */
 	private void handleTaskUpdate(TaskEntry entry){
 		TaskEntry oldEntry = null;
+		
 		synchronized(tasksIndex){
 			for(TaskEntry e : tasksIndex)
 				if (e.equals(entry)){
@@ -144,6 +148,8 @@ public class TasksNode extends ReceiverAdapter implements Node {
 				e.eventTaskUpdate(entry);
 			}
 		}
+		if (entry.getHandler().equals(info.getAddress()) || entry.getOwner().equals(info.getAddress()))
+			finished = false;
 	}
 	
 	/**
@@ -159,6 +165,8 @@ public class TasksNode extends ReceiverAdapter implements Node {
 			this.setFinished(false);
 			e.eventNewTask(entry);
 		}
+		if (entry.getHandler().equals(info.getAddress()) || entry.getOwner().equals(info.getAddress()))
+			finished = false;
 	}
 	
 	/**
@@ -264,7 +272,22 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	}
 
 	public void setLocalState(boolean localState) {
-		this.localState = localState;
+		if (this.localState != localState){
+			this.localState = localState;
+			e.eventLocalState(localState);
+		}
+	}
+	
+	/**
+	 * Protected and internal method for setting the global state without notifying the entire system.
+	 * Used when a notification was received.
+	 * @param state
+	 */
+	protected void setGlobalState(boolean state) {
+		if (this.globalState != state){
+			this.globalState = state;
+			e.eventSystemState(state);
+		}
 	}
 	
 	public boolean getLocalState(){
@@ -277,6 +300,8 @@ public class TasksNode extends ReceiverAdapter implements Node {
 
 	public void setFinished(boolean finished) {
 		this.finished = finished;
+		if (finished)
+			e.eventLocalCompletion();
 	}
 	
 	//DEBUG METHODS

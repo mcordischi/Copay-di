@@ -30,11 +30,9 @@ public interface Eventable {
 		
 		public abstract void eventTaskResponse(TaskID id);
 		
-		public abstract void eventSystemPause();
+		public abstract void eventSystemState(boolean state);
 		
-		public abstract void eventSystemResume();
-		
-		public abstract void eventLocalPause();
+		public abstract void eventLocalState(boolean state);
 		
 		public abstract void eventLocalCompletion();
 		
