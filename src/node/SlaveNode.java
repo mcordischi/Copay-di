@@ -40,7 +40,6 @@ import algorithm.TaskStealingStrategy;
 public abstract class SlaveNode extends TasksNode implements Slave {
 
 	protected final ExecutorService executor;
-	protected int maxThreads;
 	
 
 	protected Vector<TaskEntry> pendingTasks = new Vector<TaskEntry>();

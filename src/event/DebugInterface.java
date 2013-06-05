@@ -35,8 +35,8 @@ public class DebugInterface implements Eventable {
 
 	@Override
 	public void eventTaskExecution(TaskEntry entry) {
-		TaskID id = entry.getId();
-		System.out.println(prefix + ": Task Execution\t"+ id.getId() + ":" + id.getOwner().toString());
+//		TaskID id = entry.getId();
+//		System.out.println(prefix + ": Task Execution\t"+ id.getId() + ":" + id.getOwner().toString());
 
 	}
 
@@ -50,20 +50,20 @@ public class DebugInterface implements Eventable {
 
 	@Override
 	public void eventTaskUpdate(TaskEntry entry) {
-		TaskID id = entry.getId();
-		System.out.println(prefix + ": Task updated\t"+ id.getId() + ":" + id.getOwner().toString());
+//		TaskID id = entry.getId();
+//		System.out.println(prefix + ": Task updated\t"+ id.getId() + ":" + id.getOwner().toString());
 
 	}
 
 	@Override
 	public void eventTaskRequest(TaskID id) {
-		System.out.println(prefix + ": Task request\t"+ id.getId() + ":" + id.getOwner().toString());
+//		System.out.println(prefix + ": Task request\t"+ id.getId() + ":" + id.getOwner().toString());
 
 	}
 
 	@Override
 	public void eventTaskResponse(TaskID id) {
-		System.out.println(prefix + ": Task Response\t"+ id.getId() + ":" + id.getOwner().toString());
+//		System.out.println(prefix + ": Task Response\t"+ id.getId() + ":" + id.getOwner().toString());
 
 	}
 
@@ -129,7 +129,7 @@ public class DebugInterface implements Eventable {
 		System.out.print(prefix + ": NODE INFO: " + i.getAddress().toString() + " is a " + i.getNodeType() 
 				+ " and is ");
 		if (i.getWorkingState())
-			System.out.println("working with " + i.getWorkingTasks() + " tasks.");
+			System.out.println("working with " + i.getWorkingTasks() + "/" + i.getWorkingCapacity() + " tasks.");
 		else
 			System.out.println("NOT working.");
 	}

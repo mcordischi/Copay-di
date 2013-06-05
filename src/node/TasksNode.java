@@ -326,4 +326,9 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		info.forceUpdate(channel);
 	}
 	
+	public void notifyTasksIndex(){
+		for (TaskEntry entry : tasksIndex)
+			e.eventNewTask(entry);
+	}
+	
 }

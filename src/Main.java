@@ -3,6 +3,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.Vector;
 
@@ -15,32 +16,44 @@ import node.*;
 
 public class Main {
 	
+	static Random random = new Random();
+	
 	/**
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		Eventable diMaster = new DebugInterface("MTR");
-		Eventable diSlave1 = new DebugInterface("SLV1");
-		Eventable diSlave2 = new DebugInterface("SLV2");
+		Eventable diMaster1 = new DebugInterface("MTR1");
+		Eventable diMaster2 = new DebugInterface("MTR2");
+//		Eventable diSlave2 = new DebugInterface("SLV2");
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
 		//TaskStealingStrategy stlStrat = new NullStealingStrategy();
 		NodeStealingStrategy stlStrat = new FirstNodeStealingStrategy();
 		
-		Slave slave1 = new NodeStealSlaveNode(diSlave1,stlStrat,2);
-		slave1.connect("network");
+		Vector<Slave> slaves = new Vector<Slave>();
+		
+		for(int i = 0;i<30;i++){
+			Eventable diSlave1 = new DebugInterface("SLV" + i);
+			int maxThread= random.nextInt(15) +1 ;
+			Slave slave = new NodeStealSlaveNode(diSlave1,stlStrat,maxThread);
+			slave.connect("network");
+			slaves.add(slave);
+		}
 		
 
-		Slave slave2 = new NodeStealSlaveNode(diSlave2,stlStrat,1);
-		slave2.connect("network");
+//		Slave slave2 = new NodeStealSlaveNode(diSlave2,stlStrat,1);
+//		slave2.connect("network");
 		
 		BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
 		
         System.out.print("Press enter connect master"); System.out.flush();
         in.readLine().toLowerCase();
 		
-		Master master = new MasterNode(diMaster,schStrat);
-		master.connect("network");
-
+		Master master1 = new MasterNode(diMaster1,schStrat);
+		master1.connect("network");
+		
+		Master master2 = new MasterNode(diMaster2,schStrat);
+		master2.connect("network");
+		
         System.out.print("Press enter to Notify information"); System.out.flush();
         in.readLine().toLowerCase();
 //		
@@ -69,18 +82,19 @@ public class Main {
 //		
 //		System.out.println("\n\nSLAVE: \n");
 //		
-		((TasksNode)slave2).notifyInformation();
-		((TasksNode)slave2).notifyView();
+		((TasksNode)slaves.get(0)).notifyInformation();
+		((TasksNode)slaves.get(0)).notifyView();
 		
 		
         System.out.print("Press enter to start loading tasks (Y/n) "); System.out.flush();
         String str = in.readLine().toLowerCase();
         
-        Set<FutureTaskResult> set = new HashSet<FutureTaskResult>();
+        Vector<FutureTaskResult> set = new Vector<FutureTaskResult>();
 		if (str.startsWith("y")){
-			for (int i= 0 ; i<20;i++)
-				set.add(master.submit(new StringTask("t" + i)));
-			
+			for (int i= 0 ; i<500;i++){
+				set.add(master1.submit(new StringTask("1t" + i)));
+				set.add(master2.submit(new StringTask("2t" + i)));
+			}
 		}
 
 		
@@ -88,13 +102,32 @@ public class Main {
         System.out.print("Press enter to start the system"); System.out.flush();
         in.readLine().toLowerCase();
 		
-		master.setSystemState(Node.WORKING);
-		slave1.setLocalState(Node.WORKING);
-		slave2.setLocalState(Node.WORKING);
+		master1.setSystemState(Node.WORKING);
+		
+		for (Slave slv: slaves)
+			slv.setLocalState(Node.WORKING);
 		
 		
+//		System.out.print("Press enter to start the system"); System.out.flush();
+        in.readLine().toLowerCase();
+		
+        System.out.println("\nTASKS: " + set.size() + "\n\n" );
+        
+        ((TasksNode)master1).notifyTasksIndex();
+        
+        System.out.println("\n\n");
+        
+        in.readLine().toLowerCase();
+        
+        
 		for (FutureTaskResult tr : set)
-			System.out.println(tr.getTaskID() +  " RESULT " + tr.get().toString());
+			if(tr.isDone())
+				System.out.println(tr.getTaskID() +  " RESULT " + tr.get().toString());
+			else
+				System.out.println("--------> " + tr.getTaskID() + " is not done!!");
+        
+//		for (FutureTaskResult tr : set)
+//			System.out.println(tr.getTaskID() +  " RESULT " + tr.get().toString());
 
 	}
 
