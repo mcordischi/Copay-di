@@ -20,13 +20,18 @@ public class Main {
 	 */
 	public static void main(String[] args) throws Exception {
 		Eventable diMaster = new DebugInterface("MTR");
-		Eventable diSlave = new DebugInterface("SLV");
+		Eventable diSlave1 = new DebugInterface("SLV1");
+		Eventable diSlave2 = new DebugInterface("SLV2");
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
-		TaskStealingStrategy stlStrat = new NullStealingStrategy();
-
+		//TaskStealingStrategy stlStrat = new NullStealingStrategy();
+		NodeStealingStrategy stlStrat = new FirstNodeStealingStrategy();
 		
-		Slave slave = new TaskStealSlaveNode(diSlave,stlStrat,2);
-		slave.connect("network");
+		Slave slave1 = new NodeStealSlaveNode(diSlave1,stlStrat,2);
+		slave1.connect("network");
+		
+
+		Slave slave2 = new NodeStealSlaveNode(diSlave2,stlStrat,1);
+		slave2.connect("network");
 		
 		BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
 		
@@ -36,8 +41,8 @@ public class Main {
 		Master master = new MasterNode(diMaster,schStrat);
 		master.connect("network");
 
-//        System.out.print("Press enter to Notify information"); System.out.flush();
-//        in.readLine().toLowerCase();
+        System.out.print("Press enter to Notify information"); System.out.flush();
+        in.readLine().toLowerCase();
 //		
 //        System.out.println("\n\nMaster: \n");
 //        
@@ -64,8 +69,8 @@ public class Main {
 //		
 //		System.out.println("\n\nSLAVE: \n");
 //		
-//		((TasksNode)slave).notifyInformation();
-//		((TasksNode)slave).notifyView();
+		((TasksNode)slave2).notifyInformation();
+		((TasksNode)slave2).notifyView();
 		
 		
         System.out.print("Press enter to start loading tasks (Y/n) "); System.out.flush();
@@ -73,7 +78,7 @@ public class Main {
         
         Set<FutureTaskResult> set = new HashSet<FutureTaskResult>();
 		if (str.startsWith("y")){
-			for (int i= 0 ; i<10;i++)
+			for (int i= 0 ; i<20;i++)
 				set.add(master.submit(new StringTask("t" + i)));
 			
 		}
@@ -84,7 +89,8 @@ public class Main {
         in.readLine().toLowerCase();
 		
 		master.setSystemState(Node.WORKING);
-		slave.setLocalState(Node.WORKING);
+		slave1.setLocalState(Node.WORKING);
+		slave2.setLocalState(Node.WORKING);
 		
 		
 		for (FutureTaskResult tr : set)

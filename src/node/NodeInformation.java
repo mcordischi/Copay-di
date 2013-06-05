@@ -42,6 +42,25 @@ public interface NodeInformation extends Serializable{
 		 */
 		public abstract int	getWorkingTasks();
 		
+		/**
+		 * Adds one to the working tasks
+		 */
+		public abstract void addTask();
+		
+		/**
+		 * Subtracts one to the working tasks
+		 */
+		public abstract void removeTask();
+		
+		/**
+		 * Get the working capacity - Number of threads that can handle
+		 */
+		public abstract int getWorkingCapacity();
+		
+		/**
+		 * Change working state
+		 */
+		public abstract void changeState(boolean newState);
 		
 		/**
 		 * Send a request to the node to update the information

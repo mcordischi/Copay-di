@@ -197,6 +197,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 					
 				}
 		}
+		e.eventNodeStealResponse(array.size() > 0, info.getAddress(), stealer);
 		for (TaskEntry t : array){
 			try {
 				channel.send(null, new TaskNotificationMessage(MessageType.TASK_STATE, t));

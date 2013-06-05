@@ -33,6 +33,8 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	protected NodeInformation info;
 	protected NodeType nodeType;
 	
+	protected int maxThreads;
+	
 	protected JChannel channel;
 	protected View actualView;
 	
@@ -45,6 +47,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	public TasksNode(Eventable e){
 		this.e = e;
 		nodeType = NodeType.UNDEFINED;
+		maxThreads = 0;
 		finished = false;
 		localState = WORKING;
 	}
@@ -204,7 +207,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	 */
 	public void sendInformation(){
 		if (info == null)
-			info = new TasksNodeInformation(channel.getAddress(),nodeType,localState);
+			info = new TasksNodeInformation(channel.getAddress(),nodeType,localState,maxThreads);
 		try{
 			channel.send(null,new NodeInfoMessage(info));
 		} catch (Exception e1){

@@ -46,6 +46,7 @@ public class DebugInterface implements Eventable {
 		System.out.println(prefix + ": Task Steal\t"+ id.getId() + ":" + id.getOwner().toString());
 
 	}
+	
 
 	@Override
 	public void eventTaskUpdate(TaskEntry entry) {
@@ -131,6 +132,21 @@ public class DebugInterface implements Eventable {
 			System.out.println("working with " + i.getWorkingTasks() + " tasks.");
 		else
 			System.out.println("NOT working.");
+	}
+
+	@Override
+	public void eventNodeStealRequest(Address victim, Address stealer) {
+		System.out.println(prefix + ": Steal Request sent to " + victim.toString());		
+	}
+
+	@Override
+	public void eventNodeStealResponse(boolean state, Address victim,
+			Address stealer) {
+		if (state == false)
+			System.out.println(prefix + ": Steal from " + stealer + " DENIED.");
+		else
+			System.out.println(prefix + ": Steal ACCEPTED from " + stealer);
+		
 	}
 
 }

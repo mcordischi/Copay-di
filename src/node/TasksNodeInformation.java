@@ -7,19 +7,24 @@ import message.TaskMessage.MessageType;
 import org.jgroups.Address;
 import org.jgroups.Channel;
 
+//TODO implement automatic Updates
+
 public class TasksNodeInformation implements NodeInformation {
 
 	private Address address;
 	private NodeType nodeType;
 	private boolean localWorkingState;
 	private int tasksHandling;
+	private int nodeCapacity;
 	
-	public TasksNodeInformation(Address address, NodeType nodeType, boolean localState){
+	
+	
+	public TasksNodeInformation(Address address, NodeType nodeType, boolean localState, int nodeCapacity){
 		this.address = address;
 		this.nodeType = nodeType;
 		this.localWorkingState  = localState;
 		tasksHandling = 0 ;
-		
+		this.nodeCapacity = nodeCapacity;
 	}
 	
 	@Override
@@ -64,5 +69,25 @@ public class TasksNodeInformation implements NodeInformation {
 		if ( this.address.equals(o.getAddress()))
 			return true;
 		return false;
+	}
+
+	@Override
+	public int getWorkingCapacity() {
+		return nodeCapacity;
+	}
+
+	@Override
+	public void addTask() {
+		tasksHandling++;		
+	}
+
+	@Override
+	public void removeTask() {
+		tasksHandling--;		
+	}
+
+	@Override
+	public void changeState(boolean newState) {
+		localWorkingState = newState;
 	}
 }

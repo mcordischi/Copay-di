@@ -36,6 +36,10 @@ public interface Eventable {
 		
 		public abstract void eventLocalCompletion();
 		
+		public abstract void eventNodeStealRequest(Address victim, Address stealer);
+		
+		public abstract void eventNodeStealResponse(boolean state, Address victim, Address stealer);
+		
 		public abstract void eventNodeCrash(Address node);
 		
 		public abstract void eventNodeAvailable(Address node);
