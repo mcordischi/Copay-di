@@ -1,6 +1,6 @@
 package task;
 
-public class InterruptableTask implements Runnable {
+public class InterruptableTask implements Task {
 
 	private Object result;
 	private Task task;
@@ -16,27 +16,23 @@ public class InterruptableTask implements Runnable {
 	
 	
 	@Override
-	public void run() {
-        while(!Thread.currentThread().isInterrupted()){  
-            if(!interrupted){  
-                //Do work here
-            	result = task.call();
-            }
-            else{  
-                //Has been suspended  
-                try {                   
+	public Object call() throws Exception {
+	       while(!Thread.currentThread().isInterrupted()){  
+	            if(!interrupted){  
+	                //Do work here
+	            	result = task.call();
+	            	return result;
+	            }
+	            else{  
+	                //Has been suspended  
                     while(interrupted){  
                         synchronized(result){  
                             result.wait();  
                         }                           
                     }                       
-                }  
-                catch (InterruptedException e) {                    
-                }             
-            }                           
-        }  
-        System.out.println("Cancelled");    
-
+	            }                           
+	        }  
+        return null;
 	}
 
 

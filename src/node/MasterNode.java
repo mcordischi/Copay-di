@@ -151,7 +151,9 @@ public class MasterNode extends TasksNode implements Master {
 	 * TASK_ERROR contains a throwable catch in the execution of the task  
 	 */
 	private void handleTaskError(TaskErrorMessage msg){
-		//TODO
+		FutureTaskResult<Object> future = tasksResults.get(msg.getTaskID());
+		future.set(null);
+		e.eventTaskError(msg.getTaskID(),msg.getThrowable());
 	}
 	
 	

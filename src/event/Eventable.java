@@ -30,6 +30,8 @@ public interface Eventable {
 		
 		public abstract void eventTaskResponse(TaskID id);
 		
+		public abstract void eventTaskError(TaskID id, Throwable t);
+		
 		public abstract void eventSystemState(boolean state);
 		
 		public abstract void eventLocalState(boolean state);

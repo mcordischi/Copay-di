@@ -31,7 +31,7 @@ public class Main {
 		
 		Vector<Slave> slaves = new Vector<Slave>();
 		
-		for(int i = 0;i<30;i++){
+		for(int i = 0;i<3;i++){
 			Eventable diSlave1 = new DebugInterface("SLV" + i);
 			int maxThread= random.nextInt(15) +1 ;
 			Slave slave = new NodeStealSlaveNode(diSlave1,stlStrat,maxThread);
@@ -91,8 +91,8 @@ public class Main {
         
         Vector<FutureTaskResult> set = new Vector<FutureTaskResult>();
 		if (str.startsWith("y")){
-			for (int i= 0 ; i<500;i++){
-				set.add(master1.submit(new StringTask("1t" + i)));
+			for (int i= 0 ; i<10;i++){
+				set.add(master1.submit(new ExceptionTask()));
 				set.add(master2.submit(new StringTask("2t" + i)));
 			}
 		}
@@ -122,7 +122,10 @@ public class Main {
         
 		for (FutureTaskResult tr : set)
 			if(tr.isDone())
-				System.out.println(tr.getTaskID() +  " RESULT " + tr.get().toString());
+				if (tr.get() != null)
+					System.out.println(tr.getTaskID() +  " RESULT " + tr.get().toString());
+				else 
+					System.out.println(tr.getTaskID() +  " with EXCEPTION " );
 			else
 				System.out.println("--------> " + tr.getTaskID() + " is not done!!");
         

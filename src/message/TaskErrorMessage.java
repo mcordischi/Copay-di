@@ -7,7 +7,7 @@ public class TaskErrorMessage extends TaskMessage {
 	private Throwable t;
 	private TaskID taskID;
 	
-	public TaskErrorMessage(TaskID taskID, Throwable t) {
+	public TaskErrorMessage(Throwable t, TaskID taskID) {
 		super(TaskMessage.MessageType.TASK_ERROR);
 		this.t = t;
 		this.taskID = taskID;

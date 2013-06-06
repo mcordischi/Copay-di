@@ -17,7 +17,7 @@ public class DebugInterface implements Eventable {
 	
 	@Override
 	public void eventNewTask(TaskEntry entry) {
-		System.out.println(prefix + ": New Task\t"+ entry.toString());
+//		System.out.println(prefix + ": New Task\t"+ entry.toString());
 	}
 
 	@Override
@@ -147,6 +147,11 @@ public class DebugInterface implements Eventable {
 		else
 			System.out.println(prefix + ": Steal ACCEPTED from " + stealer);
 		
+	}
+
+	@Override
+	public void eventTaskError(TaskID id, Throwable t) {
+		System.out.println(prefix +": Exception received from_" + id.toString() + "\n\t\t" + t.getMessage());		
 	}
 
 }

@@ -10,6 +10,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 import message.NodeStealRequestMessage;
+import message.TaskErrorMessage;
 import message.TaskMessage;
 import message.TaskMessage.MessageType;
 import message.TaskNotificationMessage;
@@ -148,8 +149,15 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			e.eventTaskExecution(entry);
 			Future<Object> fResult = (Future<Object>) executor.submit(task);
 			workingTasks.put(entry, fResult);
+			Object result;
 			try {
-				sendResult(fResult.get(),entry);
+				result = fResult.get();
+			} catch (Exception exc){
+				sendException(exc, entry);
+				return;
+			}
+			try {
+				sendResult(result,entry);
 			} catch (Exception e1) {
 				e.eventError("Problem sending the result");
 			}
@@ -183,7 +191,6 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 * @param src
 	 */
 	protected void handleNodeSteal(NodeStealRequestMessage m, Address stealer){
-		//TODO Test
 		ArrayList<TaskEntry> array = new ArrayList<TaskEntry>();
 		int qty = m.getTasksRequested();
 		synchronized(tasksIndex){
@@ -208,7 +215,8 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	
 	
 	/**
-	 * Send a multicast message with the result of a task
+	 * Send a multicast message with the FINISHED notification of a task.
+	 * Also sends an unicast message to the Task's Owner with the result
 	 * @param result: the result of the task
 	 * @param entry: the task entry
 	 */
@@ -224,7 +232,28 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		} catch (Exception e1) {
 			e.eventError("Send result failed. Are you still connected to the cluster?");
 		}
-
+	}
+	
+	//Almost a copy-paste of sendResult. TODO merge them.
+	/**
+	 * Send a multicast message with the FINISHED notification of a task.
+	 * Also sends an unicast message to the Task's Owner with the Exception.
+	 * 
+	 * @param exc
+	 * @param entry
+	 */
+	protected void sendException(Exception exc, TaskEntry entry){
+		synchronized(entry){
+			entry.setState(TaskEntry.StateType.FINISHED);
+		}
+		e.eventTaskComplete(entry);
+		//Notifies the cluster of the state and the result and sends to the owner the result
+		try {
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STATE,entry));
+			channel.send(entry.getOwner(), new TaskErrorMessage(exc, entry.getId()));
+		} catch (Exception e1) {
+			e.eventError("Send Exception failed. Are you still connected to the cluster?");
+		}
 	}
 	
 }
