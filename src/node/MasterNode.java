@@ -36,19 +36,17 @@ public class MasterNode extends TasksNode implements Master {
 // ******************************
 	
 	public MasterNode(Eventable e,SchedulerStrategy schStrat){
-		super(e);
+		super(e,PAUSE);
 		this.schStrat = schStrat;
-		setLocalState(PAUSE);
-		setFinished(true);
+//		setFinished(true);
 		nodeType = NodeType.MASTER;
 	}
 
 
 	public MasterNode(Eventable e){
-		super(e);
+		super(e,PAUSE);
 		this.schStrat = null;
-		setLocalState(PAUSE);
-		setFinished(true);
+//		setFinished(true);
 		nodeType = NodeType.MASTER;
 	}
 
@@ -84,11 +82,16 @@ public class MasterNode extends TasksNode implements Master {
 		return futureTask;
 	}
 
+	
 	@Override
 	public void cancel(TaskID id) {
-		tasksMap.remove(id);
-		tasksResults.get(id).cancel(true);
-		tasksResults.remove(id);
+		synchronized(tasksMap){
+			tasksMap.remove(id);
+		}
+		synchronized(tasksResults){
+//			tasksResults.get(id).cancel(true);
+			tasksResults.remove(id);
+		}
 		
 		try{
 			//Creates a new TaskEntry to avoid looking for the real Entry in tasksIndex

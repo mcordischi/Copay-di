@@ -44,12 +44,12 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	
 
 	
-	public TasksNode(Eventable e){
+	public TasksNode(Eventable e, boolean initialLocalState){
 		this.e = e;
 		nodeType = NodeType.UNDEFINED;
 		maxThreads = 0;
 		finished = false;
-		localState = WORKING;
+		localState = initialLocalState;
 	}
 	
 	@Override
@@ -132,7 +132,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	 * Actions to make when a TASK_UPDATE message was received
 	 * @param entry
 	 */
-	private void handleTaskUpdate(TaskEntry entry){
+	protected void handleTaskUpdate(TaskEntry entry){
 		TaskEntry oldEntry = null;
 		
 		synchronized(tasksIndex){
@@ -160,7 +160,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	 * Handle the ADD_TASK message
 	 * @param entry
 	 */
-	private void handleAddTask(TaskEntry entry){
+	protected void handleAddTask(TaskEntry entry){
 		boolean exists = tasksIndex.contains(entry);
 		if (!exists){
 			synchronized(tasksIndex){
@@ -224,7 +224,6 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		Util.objectToStream(tasksIndex, out);
 		Util.objectToStream(nodesInfo, out);
 		Util.objectToStream(globalState, out);
-	//	e.eventWarning(info.getAddress() + " is sending info");
 	}
 	
 	/**
@@ -246,7 +245,6 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		synchronized(nodesInfo){
 			nodesInfo.addAll(inInfo);
 		}
-		e.eventWarning("A new node is receiving info");
 	}
 	
 //GETTERS or SETTERS	
@@ -327,6 +325,8 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	}
 	
 	public void notifyTasksIndex(){
+		if (tasksIndex.size() == 0)
+			e.eventWarning("The tasks Index is empty");
 		for (TaskEntry entry : tasksIndex)
 			e.eventNewTask(entry);
 	}

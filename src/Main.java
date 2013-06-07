@@ -1,137 +1,85 @@
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
 import java.util.Vector;
 
-import algorithm.*;
-import event.*;
-import task.*;
-import node.*;
-
+import task.ExceptionTask;
+import task.FutureTaskResult;
+import task.StringTask;
+import node.Master;
+import node.MasterNode;
+import node.NodeStealSlaveNode;
+import node.Slave;
+import node.TasksNode;
+import algorithm.FirstNodeStealingStrategy;
+import algorithm.NodeStealingStrategy;
+import algorithm.RandomSchedulerStrategy;
+import algorithm.SchedulerStrategy;
+import event.DebugInterface;
+import event.Eventable;
 
 
 public class Main {
-	
-	static Random random = new Random();
-	
+
 	/**
 	 * @param args
+	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws IOException {
 		Eventable diMaster1 = new DebugInterface("MTR1");
-		Eventable diMaster2 = new DebugInterface("MTR2");
-//		Eventable diSlave2 = new DebugInterface("SLV2");
+		Eventable diSlave1 = new DebugInterface("SLV1");
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
-		//TaskStealingStrategy stlStrat = new NullStealingStrategy();
 		NodeStealingStrategy stlStrat = new FirstNodeStealingStrategy();
-		
-		Vector<Slave> slaves = new Vector<Slave>();
-		
-		for(int i = 0;i<3;i++){
-			Eventable diSlave1 = new DebugInterface("SLV" + i);
-			int maxThread= random.nextInt(15) +1 ;
-			Slave slave = new NodeStealSlaveNode(diSlave1,stlStrat,maxThread);
-			slave.connect("network");
-			slaves.add(slave);
-		}
-		
 
-//		Slave slave2 = new NodeStealSlaveNode(diSlave2,stlStrat,1);
-//		slave2.connect("network");
-		
-		BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
-		
-        System.out.print("Press enter connect master"); System.out.flush();
-        in.readLine().toLowerCase();
 		
 		Master master1 = new MasterNode(diMaster1,schStrat);
 		master1.connect("network");
 		
-		Master master2 = new MasterNode(diMaster2,schStrat);
-		master2.connect("network");
+		Slave slave1 = new NodeStealSlaveNode(diSlave1,stlStrat,5);
+		slave1.connect("network");
 		
-        System.out.print("Press enter to Notify information"); System.out.flush();
-        in.readLine().toLowerCase();
-//		
-//        System.out.println("\n\nMaster: \n");
-//        
-//		((TasksNode)master).notifyInformation();
-//		((TasksNode)master).notifyView();
-//		
-//		System.out.println("\n\nSLAVE: \n");
-//		
-//		((TasksNode)slave).notifyInformation();
-//		((TasksNode)slave).notifyView();
-//		
+
+        master1.setSystemState(true);
+        slave1.setLocalState(true);
 		
-//		System.out.println("Forcing to update ");
-//		
-//		((TasksNode)slave).forceUpdate();
-//		((TasksNode)master).forceUpdate();
-//
-//		
-//        System.out.print("Press enter to Notify information after forced update"); System.out.flush();
-//        in.readLine().toLowerCase();
-//		
-//		((TasksNode)master).notifyInformation();
-//		((TasksNode)master).notifyView();
-//		
-//		System.out.println("\n\nSLAVE: \n");
-//		
-		((TasksNode)slaves.get(0)).notifyInformation();
-		((TasksNode)slaves.get(0)).notifyView();
-		
-		
-        System.out.print("Press enter to start loading tasks (Y/n) "); System.out.flush();
-        String str = in.readLine().toLowerCase();
+		BufferedReader in;
+		String str; 
+//		BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
+//		System.out.print("Press enter to start system"); System.out.flush();
+//        String str = in.readLine().toLowerCase();
         
-        Vector<FutureTaskResult> set = new Vector<FutureTaskResult>();
-		if (str.startsWith("y")){
-			for (int i= 0 ; i<10;i++){
-				set.add(master1.submit(new ExceptionTask()));
-				set.add(master2.submit(new StringTask("2t" + i)));
-			}
+		boolean finish = false;
+		Vector<FutureTaskResult> set = new Vector<FutureTaskResult>();
+		
+		while(!finish){
+			in=new BufferedReader(new InputStreamReader(System.in));
+			System.out.print("Press next Action : \n\tviewTasks(T)\n\tviewInfo(I)\n\tsubmitTasks(S)\n\tremoveTasks(R)\n\tExit(Q)"); System.out.flush();
+	        str = in.readLine().toLowerCase();
+	        
+	        switch(str){
+	        case "t":
+	        	((TasksNode)slave1).notifyTasksIndex();
+	        	break;
+	        case "i":
+	        	((TasksNode)slave1).notifyInformation();
+	        	break;
+	        case "s":
+	        	for (int i= 0 ; i<10;i++){
+	        		set.add(master1.submit(new StringTask("T" + i)));
+	        	}
+	        	break;
+	        case "r":
+	        	for (FutureTaskResult t: set)
+	        		t.cancel(true);
+	        	break;
+	        case "q":
+	        	finish = true;
+	        	break;
+	        }
 		}
-
-		
-		
-        System.out.print("Press enter to start the system"); System.out.flush();
-        in.readLine().toLowerCase();
-		
-		master1.setSystemState(Node.WORKING);
-		
-		for (Slave slv: slaves)
-			slv.setLocalState(Node.WORKING);
-		
-		
-//		System.out.print("Press enter to start the system"); System.out.flush();
-        in.readLine().toLowerCase();
-		
-        System.out.println("\nTASKS: " + set.size() + "\n\n" );
         
-        ((TasksNode)master1).notifyTasksIndex();
+       
         
-        System.out.println("\n\n");
-        
-        in.readLine().toLowerCase();
-        
-        
-		for (FutureTaskResult tr : set)
-			if(tr.isDone())
-				if (tr.get() != null)
-					System.out.println(tr.getTaskID() +  " RESULT " + tr.get().toString());
-				else 
-					System.out.println(tr.getTaskID() +  " with EXCEPTION " );
-			else
-				System.out.println("--------> " + tr.getTaskID() + " is not done!!");
-        
-//		for (FutureTaskResult tr : set)
-//			System.out.println(tr.getTaskID() +  " RESULT " + tr.get().toString());
-
 	}
 
 }

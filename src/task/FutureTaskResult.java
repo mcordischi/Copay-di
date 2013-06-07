@@ -31,9 +31,12 @@ public class FutureTaskResult<V> implements Future<V> {
 	
 	@Override
 	public boolean cancel(boolean arg0) {
-		cancel = true;
-		master.cancel(id);
-		return cancel;
+		if (!cancel){
+			cancel = true;
+			master.cancel(id);
+			return cancel;
+		}
+		return false;
 	}
 	
 	@Override

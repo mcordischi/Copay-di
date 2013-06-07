@@ -48,7 +48,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	
 	
 	public SlaveNode(Eventable e, int maxThreads) {
-		super(e);
+		super(e,PAUSE);
 		this.maxThreads = maxThreads;
 		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
 		nodeType = NodeType.SLAVE;
@@ -166,6 +166,18 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			e.eventWarning(" Received task " + id.toString() + ", but not in pendingTasks");
 	}
 	
+	
+	@Override
+	protected void handleTaskUpdate(TaskEntry entry){
+		super.handleTaskUpdate(entry);
+		start();
+	}
+	
+	@Override
+	protected void handleAddTask(TaskEntry entry){
+		super.handleAddTask(entry);
+		start();
+	}
 	
 	/**
 	 * Handle the REMOVE_TASK message
