@@ -153,7 +153,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 			}
 		}
 		if (entry.getHandler().equals(info.getAddress()) || entry.getOwner().equals(info.getAddress()))
-			finished = false;
+			setFinished(false);
 	}
 	
 	/**
@@ -301,9 +301,9 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	}
 
 	public void setFinished(boolean finished) {
-		this.finished = finished;
-		if (finished)
+		if (finished && !this.finished)
 			e.eventLocalCompletion();
+		this.finished = finished;
 	}
 	
 	//DEBUG METHODS
@@ -328,7 +328,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		if (tasksIndex.size() == 0)
 			e.eventWarning("The tasks Index is empty");
 		for (TaskEntry entry : tasksIndex)
-			e.eventNewTask(entry);
+			e.notifyTask(entry);
 	}
 	
 }

@@ -17,7 +17,7 @@ public class DebugInterface implements Eventable {
 	
 	@Override
 	public void eventNewTask(TaskEntry entry) {
-		System.out.println(prefix + ": New Task\t"+ entry.toString());
+//		System.out.println(prefix + ": New Task\t"+ entry.toString());
 	}
 
 	@Override
@@ -28,8 +28,8 @@ public class DebugInterface implements Eventable {
 
 	@Override
 	public void eventTaskComplete(TaskEntry entry) {
-		TaskID id = entry.getId();
-		System.out.println(prefix + ": Task completed\t"+ id.getId() + ":" + id.getOwner().toString());
+//		TaskID id = entry.getId();
+//		System.out.println(prefix + ": Task completed\t"+ id.getId() + ":" + id.getOwner().toString());
 
 	}
 
@@ -57,7 +57,7 @@ public class DebugInterface implements Eventable {
 
 	@Override
 	public void eventTaskRequest(TaskID id) {
-//		System.out.println(prefix + ": Task request\t"+ id.getId() + ":" + id.getOwner().toString());
+		System.out.println(prefix + ": Task request\t"+ id.getId() + ":" + id.getOwner().toString());
 
 	}
 
@@ -152,6 +152,11 @@ public class DebugInterface implements Eventable {
 	@Override
 	public void eventTaskError(TaskID id, Throwable t) {
 		System.out.println(prefix +": Exception received from_" + id.toString() + "\n\t\t" + t.getMessage());		
+	}
+
+	@Override
+	public void notifyTask(TaskEntry entry) {
+		System.out.println(prefix + "-TaskInfo:\t"+ entry.toString());
 	}
 
 }

@@ -51,4 +51,6 @@ public interface Eventable {
 		public abstract void eventError(String str);
 		
 		public abstract void eventInformation(NodeInformation i);
+		
+		public abstract void notifyTask(TaskEntry entry);
 }

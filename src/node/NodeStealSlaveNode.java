@@ -19,22 +19,28 @@ public class NodeStealSlaveNode extends SlaveNode {
 		this.stlStrat = stlStrat;
 	}
 
+	/**
+	 * Requests 2 times the pool size
+	 */
 	@Override
 	protected void start() {
 		while (getGlobalState() == WORKING && getLocalState()== WORKING && !isFinished()){
+			//Waiting
+			while(pendingTasks.size() >= 2*maxThreads)
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e1) {
+					e.eventError("Thread.sleep\n" + e1.getCause());
+				}
+			//Fetch & Request
 			TaskEntry entry = fetchTask();
 			if(entry != null){
-				while(pendingTasks.size() >= maxThreads)
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e1) {
-						e.eventError("Thread.sleep\n" + e1.getCause());
-					}
 				requestTask(entry);
 			}
 			else {
-				requestSteal();
-				e.eventLocalCompletion();
+				//Steal
+				if (stlStrat != null)
+					requestSteal();
 				setFinished(true);
 			}
 		}
@@ -59,13 +65,16 @@ public class NodeStealSlaveNode extends SlaveNode {
 	 * calls a stealing algorithm to steal from other node.
 	 *
 	 */
-	protected synchronized TaskEntry fetchTask(){
+	protected TaskEntry fetchTask(){
 		Address localAddress = channel.getAddress();
-		for (TaskEntry entry : tasksIndex){
-			if (entry.getHandler().equals(localAddress) && entry.getState().equals(TaskEntry.StateType.SUBMITTED))
-				return entry;
+		TaskEntry result = null;
+		synchronized(tasksIndex){
+			for (TaskEntry entry : tasksIndex){
+				if (entry.getHandler().equals(localAddress) && entry.getState().equals(TaskEntry.StateType.SUBMITTED))
+					result = entry;
+			}
 		}
-		return null ;
+		return result ;
 	}
 	
 }

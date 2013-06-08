@@ -21,60 +21,105 @@ import event.Eventable;
 
 public class Main {
 
+	public static int masterID = 0;
+	public static int slaveID = 0;
+	
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		Eventable diMaster1 = new DebugInterface("MTR1");
-		Eventable diSlave1 = new DebugInterface("SLV1");
+		
+	
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
 		NodeStealingStrategy stlStrat = new FirstNodeStealingStrategy();
-
-		
-		Master master1 = new MasterNode(diMaster1,schStrat);
-		master1.connect("network");
-		
-		Slave slave1 = new NodeStealSlaveNode(diSlave1,stlStrat,5);
-		slave1.connect("network");
-		
-
-        master1.setSystemState(true);
-        slave1.setLocalState(true);
 		
 		BufferedReader in;
 		String str; 
-//		BufferedReader in=new BufferedReader(new InputStreamReader(System.in));
-//		System.out.print("Press enter to start system"); System.out.flush();
-//        String str = in.readLine().toLowerCase();
-        
-		boolean finish = false;
-		Vector<FutureTaskResult> set = new Vector<FutureTaskResult>();
+
 		
+		boolean finish = false;
+		Vector< Vector<FutureTaskResult> > futures  = new Vector< Vector<FutureTaskResult> >();
+		Vector<Master> masters = new Vector<Master>();
+		Vector<Slave> slaves = new Vector<Slave>();
+		in=new BufferedReader(new InputStreamReader(System.in));
 		while(!finish){
-			in=new BufferedReader(new InputStreamReader(System.in));
-			System.out.print("Press next Action : \n\tviewTasks(T)\n\tviewInfo(I)\n\tsubmitTasks(S)\n\tremoveTasks(R)\n\tExit(Q)"); System.out.flush();
+			in.readLine();
+			System.out.print("Press next Action :" +
+							"\n\tAdd Master(M): There are " + masters.size()  +" masters." +
+							"\n\tAdd Slave(S): There are " + slaves.size()  +" slaves." +
+							"\n\tRemove Master(RM)." +
+							"\n\tRemove Slave(RS)." +
+							"\n\tStart system(START)." +
+							"\n\tStop system(STOP)."  +
+							"\n\tviewTasks(T)" +
+							"\n\tviewInfo(I)" +
+							"\n\tviewResults(R)" +
+							"\n\tsubmit 100 Tasks for each master (U)" +
+							"\n\tremove 10 Tasks for each master (D)" +
+							"\n\tExit(Q)\n"); System.out.flush();
 	        str = in.readLine().toLowerCase();
 	        
 	        switch(str){
-	        case "t":
-	        	((TasksNode)slave1).notifyTasksIndex();
+	        case "m": //add master
+	        	Eventable diMaster = new DebugInterface("MTR" + masterID);
+	        	masterID++;
+	        	Master master = new MasterNode(diMaster,schStrat);
+	    		master.connect("network");
+	    		masters.add(master);
+	    		futures.add(new Vector<FutureTaskResult>());
 	        	break;
-	        case "i":
-	        	((TasksNode)slave1).notifyInformation();
+	        case "s": //add slave
+	        	Eventable diSlave = new DebugInterface("SLV" + slaveID);
+	        	slaveID++;
+	        	Slave slave = new NodeStealSlaveNode(diSlave,stlStrat,5);
+	    		slave.connect("network");
+	            slave.setLocalState(true);
+	            slaves.add(slave);
+	            break;
+	        case "rm": //remove master
+	        {
+	        	Master toRemove = masters.get(0);
+	        	masters.remove(0);
+	        	futures.remove(0);
+	        	toRemove.disconnect();
 	        	break;
-	        case "s":
-	        	for (int i= 0 ; i<10;i++){
-	        		set.add(master1.submit(new StringTask("T" + i)));
-	        	}
+	        }
+        	case "rs": //remove slave
+        	{
+	        	Slave toRemove = slaves.get(0);
+	        	slaves.remove(0);
+	        	toRemove.disconnect();
 	        	break;
-	        case "r":
-	        	for (FutureTaskResult t: set)
-	        		t.cancel(true);
+        	}
+	        case "start": //start system
+	        	masters.get(0).setSystemState(true);
 	        	break;
-	        case "q":
+	        case "stop": //stop system
+	        	masters.get(0).setSystemState(false);
+	        	break;
+	        case "t": //viewTasks
+	        	((TasksNode)masters.get(0)).notifyTasksIndex();
+	        	break;
+	        case "i": //viewInfo
+	        	((TasksNode)masters.get(0)).notifyInformation();
+	        	break;
+	        case "u": //submit 100 tasks
+	        	for (int masterPos = 0 ; masterPos<masters.size();masterPos++)
+	        		for (int i= 0 ; i<100;i++){
+	        			futures.get(masterPos).add(masters.get(masterPos).submit(new StringTask("T " + i)));
+	        		}
+	        	break;
+	        case "d": // Remove 10 tasks
+	        	for (Vector<FutureTaskResult> t: futures)
+	        		for(int i=0; i<10;i++)
+	        			t.get(i).cancel(true);
+	        	break;
+	        case "q": // Exit
 	        	finish = true;
 	        	break;
+        	default :
+        		System.out.println("Command not valid. Press Enter");
 	        }
 		}
         

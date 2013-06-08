@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 
@@ -50,13 +51,15 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	public SlaveNode(Eventable e, int maxThreads) {
 		super(e,PAUSE);
 		this.maxThreads = maxThreads;
-		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
+		this.executor = Executors.newFixedThreadPool(maxThreads);
+//		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
 		nodeType = NodeType.SLAVE;
 	}
 	
 	
 	/**
-	 * This method contain the task fetching and/or stealing
+	 * This method contain the task fetching and/or stealing.
+	 * When implementing, be careful of synchronization 
 	 */
 	protected abstract void start();
 	
@@ -68,7 +71,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 * @param task
 	 */
 	public void requestTask(TaskEntry entry){
-		entry.setState(TaskEntry.StateType.WORKING);
+		entry.setState(TaskEntry.StateType.REQUESTED);
 		e.eventTaskRequest(entry.getId());
 		synchronized(pendingTasks){
 			pendingTasks.add(entry);
@@ -80,9 +83,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			channel.send(entry.getOwner(), new TaskRequestMessage(TaskMessage.MessageType.TASK_REQUEST, entry.getId()));
 		} catch (Exception e1) {
 			e.eventError("Request Task Failed. Are you still connected to the cluster?");
-			synchronized(entry){
-				entry.setState(TaskEntry.StateType.UNDEFINED);
-			}
+			entry.setState(TaskEntry.StateType.UNDEFINED);
 			synchronized(pendingTasks){
 				pendingTasks.remove(entry);
 			}
@@ -133,6 +134,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 * @throws Exception 
 	 */
 	protected void handleTask(TaskID id, Task task){
+		//TODO SOMETHING NOT WORKING HERE
 		TaskEntry entry = null;
 		synchronized(pendingTasks){
 			for (TaskEntry i : pendingTasks){
@@ -146,7 +148,16 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			synchronized(pendingTasks){
 				pendingTasks.remove(entry);
 			}
+			
+			//TODO taskExecution is not called
 			e.eventTaskExecution(entry);
+			entry.setState(TaskEntry.StateType.WORKING);
+			try {
+				//Notify cluster that the node is going to start the execution of the task
+				channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STATE,entry));
+			} catch (Exception e1) {
+				e.eventError("Request Task Failed. Are you still connected to the cluster?");
+			}
 			Future<Object> fResult = (Future<Object>) executor.submit(task);
 			workingTasks.put(entry, fResult);
 			Object result;
@@ -170,13 +181,15 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	@Override
 	protected void handleTaskUpdate(TaskEntry entry){
 		super.handleTaskUpdate(entry);
-		start();
+//		if (entry.getHandler().equals(info.getAddress()) && entry.getState()!=StateType.FINISHED)
+//			start();
 	}
 	
 	@Override
 	protected void handleAddTask(TaskEntry entry){
 		super.handleAddTask(entry);
-		start();
+//		if (entry.getHandler().equals(info.getAddress()) && entry.getState()!=StateType.FINISHED)
+//			start();
 	}
 	
 	/**
@@ -210,9 +223,8 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 				if (array.size() == qty)
 					break;
 				else if (t.getHandler().equals(info.getAddress()) && 
-						(t.getState() == StateType.SUBMITTED || t.getState() == StateType.UNDEFINED )){
-					array.add(new TaskEntry(t.getId(),stealer));
-					
+						(t.getState() == StateType.SUBMITTED || t.getState() == StateType.UNDEFINED  )){
+					array.add(new TaskEntry(t.getId(),stealer));	
 				}
 		}
 		e.eventNodeStealResponse(array.size() > 0, info.getAddress(), stealer);
@@ -266,6 +278,17 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		} catch (Exception e1) {
 			e.eventError("Send Exception failed. Are you still connected to the cluster?");
 		}
+	}
+	
+	
+	/**
+	 * If not finished, calls the start() method.
+	 */
+	@Override
+	public void setFinished(boolean finished){
+		super.setFinished(finished);
+		if (!finished)
+			start();
 	}
 	
 }
