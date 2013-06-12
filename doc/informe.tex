@@ -87,4 +87,67 @@
 
 \section*{Resumen}
 
+Como trabajo final de la cátedra de Computación Paralela y Distribuida, se ha realizado un sistema distribuido para el procesamiento de tareas de cualquier tipo sin dependencia entre ellas. Este framework desarrollado podrá ser utilizado para la realización de sistemas grid, dejando transparente todo el trabajo necesario para conexión de nodos, interacción entre ellos, y ejecución de tareas.
+
+Este informe dará las nociones generales del sistema, notificará las principales decisiones adoptadas y detallará los elementos de interés para el funcionamiento de éste.
+
+
+
+\section*{Introducción}
+
+\section*{Desarrollo}
+
+\subsection*{Nociones generales del sistema}
+
+El objetivo principal del trabajo es la posibilidad de brindar procesamiento distribuido a tareas no dependientes a través de un sistema no centralizado, utilizando un modelo productor/consumidor. Como requerimiento funcional también se ha solicitado la posibilidad de establecer políticas de robo de trabajos entre los nodos consumidores.
+
+Para llegar a cumplir los requerimientos, se ha desarrollado una aplicación en Java\ref{Java} la cual es capaz de recibir y ejecutar tareas brindadas por el usuario a través de una interfaz sencilla, utilizando la potencia del procesamiento distribuido.
+
+El sistema desarrollado utiliza las facilidades brindadas por la biblioteca JGroups\ref{JGroups} para abstracción de la comunicación entre nodos. Esta herramienta ha traído importantes ventajas para la correcta implementación y ha satisfecho completamente la necesidad de tener un módulo de comunicación.
+
+\subsection*{Características técnicas}
+
+\begin{itemize}
+	\item \textbf{Tipo de sistema:} Framework.
+	\item \textbf{Propósito:} Procesamiento distribuido de tareas.
+    \item \textbf{Lenguaje:} Java\ref{Java}.
+    	\item \textbf{Bibliotecas externas:} Jgroups\ref{JGroups}.
+%   	\item \textbf{Licencia:} 
+\end{itemize}
+
+\subsection*{Descripción del sistema}
+
+El sistema se puede descomponer en 3 tipos de componentes principales:
+
+\begin{itemize}
+	\item \textbf{Nodos:} principales componentes del sistema, encargados de la conexión, la ejecución de tareas y la interacción con el usuario. Forman en conjunto un cluster.
+	\item \textbf{Tareas:} elementos que se sirven de entrada y salida al sistema.
+	\item \textbf{Mensajes:} componente completamente interno, encargados de contener la información transmitida entre los nodos.
+\end{itemize}
+
+Estos 3 tipos de componentes definen el sistema. Como soporte a ellos, también se definen
+
+\begin{itemize}
+	\item \textbf{Políticas:} empaquetadas en elementos del sistema sirven para determinar comportamientos de programación (scheduling) y de robos.
+	\item \textbf{Interfaz:} notifican eventos del sistema.
+\end{itemize}
+
+A continuación, se detallarán los elementos principales del sistema y sus funciones.
+
+\subsubsection*{Nodos}
+
+Como se puede observar en \ref{fig:componentes}, los nodos son los elementos con mayores responsabilidades ya que deben establecer comunicaciones con otros nodos, seguir el estado del cluster y insertar y/o ejecutar tareas.
+
+El sistema define 4 tipos de nodos, mostrados en \ref{fig:interfacesNodos}
+
+%Imagen de la jerarquía de interfaces de nodos
+
+Las cuales están implementadas a través de la jerarquía de clases mostradas en \ref{fig:clasesNodos}
+
+
+\subsection*{Racional de diseño}
+
+\subsection*{Utilización y aplicaciones}
+
+\subsection*{Historial de cambios}
 

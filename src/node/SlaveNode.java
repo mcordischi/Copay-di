@@ -140,6 +140,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 			for (TaskEntry i : pendingTasks){
 				if (i.getId().equals(id)){
 					entry = i;
+					e.eventWarning("I RECEIVED " + i.toString());
 					break;
 				}
 			}
@@ -147,6 +148,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		if (entry != null){
 			synchronized(pendingTasks){
 				pendingTasks.remove(entry);
+				e.eventWarning("I am removing " + entry.toString());
 			}
 			
 			//TODO taskExecution is not called
