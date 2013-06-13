@@ -136,14 +136,43 @@ A continuación, se detallarán los elementos principales del sistema y sus func
 
 \subsubsection*{Nodos}
 
-Como se puede observar en \ref{fig:componentes}, los nodos son los elementos con mayores responsabilidades ya que deben establecer comunicaciones con otros nodos, seguir el estado del cluster y insertar y/o ejecutar tareas.
+%TODO Diagrama de componentes
 
-El sistema define 4 tipos de nodos, mostrados en \ref{fig:interfacesNodos}
+Como se puede observar en \ref{fig:componentes}, los nodos son los elementos con mayores responsabilidades ya que deben establecer comunicaciones con otros nodos, seguir el estado del cluster y insertar y/o ejecutar tareas. Los nodos pueden corresponderse uno a uno con máquinas en un cluster, pero es necesario destacar que pueden existir y convivir más de un nodo por terminal, siendo así el caso en el que se desee procesar, insertar y/o monitorear tareas, teniendo un tipo de nodo distinto por propósito.
 
-%Imagen de la jerarquía de interfaces de nodos
+El sistema define 4 tipos de nodos, mostrados en \ref{fig:interfacesNodos}, los cuales están implementadas a través de la jerarquía de clases mostrada en \ref{fig:clasesNodos}. La funcionalidad principal de cada tipo de nodo es:
 
-Las cuales están implementadas a través de la jerarquía de clases mostradas en \ref{fig:clasesNodos}
+\begin{itemize}
+	\item \textbf{Master:} Encargado de insertar tareas al cluster, este tipo de nodo devuelve resultados mediante la interfaz \textit{Future}, siendo así necesaria su conexión con el cluster siempre que queden tareas pendientes.
+	\item \textbf{Slave:} consumidor de las tareas. Una vez conectado al cluster, es capaz de buscar y ejecutar tareas. Las distintas clases implementadas proponen distintas políticas de robo, las cuales serán detalladas más adelante.
+	\item \textbf{Monitor:} interfaz no implementada en su totalidad, pero diseñada para el acceso a la información detallada sobre el cluster. Esta entidad provee una interfaz para obtener datos sobre las tareas y los nodos conectados.
+\end{itemize}
 
+
+Todos los nodos poseen un estado global del cluster, el cual incluye la lista de todos los nodos y su información, a través de la interfaz \textit{NodeInformation}; y los datos básicos pertenecientes a todas las tareas que están trabajando, pendientes o finalizadas a través de la clase \textit{TaskEntry}.
+
+%TODO Imagen de la jerarquía de interfaces de nodos
+%TODO Imagen de la jerarquía de clases de nodos
+
+\subsubsection*{Tareas}
+
+Las tareas están provistas como una interfaz contenedora llamada \textit{Task}, cuya ejecución estará a cargo del método \textit{call()}. Estas devolverán un resultado que se podrá acceder a través del \textit{Future} generado por el \textit{Master}. Cualquier tipo de excepción o error será notificado a través del mismo medio.
+
+%TODO Diagrama de secuencia
+
+Como se puede observar en \ref{img:secuenciaTarea}, una vez que se le solicita una tarea al \textit{Master}, este solo notificará a todo el cluster sobre la novedad, pero no enviará la tarea en sí hasta no recibir una solicitud de ejecución de un \textit{Slave}. Una vez enviada la tarea al nodo responsable, solo quedará ejecutarla y devolver el resultado o excepción. Estos estados por los que pasa cada tarea se puede observar en \ref{img:estadosTarea}.
+
+%TODO Estados de una tarea
+
+Las tareas serán ejecutadas en un nodo, el cual será determinado inicialmente por las políticas de scheduling del \textit{Master}, con posibles variaciones debido a los robos. Estas características deberán ser establecidas y desarrolladas por el programador que desee utilizar el sistema.
+
+
+
+Cabe destacar que también se ha implementado una subclase especial de tarea, la cual permite que la misma se pause ante necesidades especiales del \textit{Slave}. De todas formas, hasta el momento el sistema no aprovecha esta característica.
+
+\subsubsection*{Mensajes}
+
+Internos al sistema y completamente transparente, los datos enviados a través del cluster son realizados a través del paquete de clases de \textit{Message}.
 
 \subsection*{Racional de diseño}
 

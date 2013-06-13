@@ -9,6 +9,14 @@ import task.TaskEntry;
 import algorithm.TaskStealingStrategy;
 import event.Eventable;
 
+
+/**
+ * CAUTION: need maintenance.
+ *  - Work with flags
+ *  - Steal Control
+ * @author marto
+ *
+ */
 public class TaskStealSlaveNode extends SlaveNode {
 
 	TaskStealingStrategy stlStrat;

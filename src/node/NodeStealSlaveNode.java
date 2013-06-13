@@ -24,7 +24,14 @@ public class NodeStealSlaveNode extends SlaveNode {
 	 */
 	@Override
 	protected void start() {
-		while (getGlobalState() == WORKING && getLocalState()== WORKING && !isFinished()){
+		//TODO FIX THIS!
+		if (!finishedLock.tryLock()){
+			finishedLock.lock();
+			flagLock.lock();
+			setFlag(true);
+			flagLock.unlock();
+		}
+		while (getGlobalState() == WORKING && getLocalState()== WORKING && (!isFinished() || isFlag())){
 			//Waiting
 			while(pendingTasks.size() >= 2*maxThreads)
 				try {
@@ -44,6 +51,7 @@ public class NodeStealSlaveNode extends SlaveNode {
 				setFinished(true);
 			}
 		}
+		finishedLock.unlock();
 	}
 	
 	

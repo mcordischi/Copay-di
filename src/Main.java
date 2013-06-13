@@ -72,7 +72,7 @@ public class Main {
 	        case "s": //add slave
 	        	Eventable diSlave = new DebugInterface("SLV" + slaveID);
 	        	slaveID++;
-	        	Slave slave = new NodeStealSlaveNode(diSlave,stlStrat,5);
+	        	Slave slave = new NodeStealSlaveNode(diSlave,null,5);
 	    		slave.connect("network");
 	            slave.setLocalState(true);
 	            slaves.add(slave);
@@ -103,6 +103,9 @@ public class Main {
 	        	break;
 	        case "i": //viewInfo
 	        	((TasksNode)masters.get(0)).notifyInformation();
+	        	break;
+	        case "r": //viewResults
+	        	//TODO
 	        	break;
 	        case "u": //submit 100 tasks
 	        	for (int masterPos = 0 ; masterPos<masters.size();masterPos++)

@@ -9,6 +9,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import message.NodeStealRequestMessage;
 import message.TaskErrorMessage;
@@ -47,6 +49,9 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	protected Vector<TaskEntry> pendingTasks = new Vector<TaskEntry>();
 	protected Map<TaskEntry,Future<Object> > workingTasks = new ConcurrentHashMap<TaskEntry, Future<Object> >();
 	
+	protected Lock finishedLock;
+	protected Lock flagLock;
+	private boolean flag;
 	
 	public SlaveNode(Eventable e, int maxThreads) {
 		super(e,PAUSE);
@@ -54,6 +59,9 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		this.executor = Executors.newFixedThreadPool(maxThreads);
 //		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
 		nodeType = NodeType.SLAVE;
+		finishedLock = new ReentrantLock();
+		flagLock = new ReentrantLock();
+		flag = true;
 	}
 	
 	
@@ -70,8 +78,10 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 * @param entry
 	 * @param task
 	 */
-	public void requestTask(TaskEntry entry){
-		entry.setState(TaskEntry.StateType.REQUESTED);
+	public synchronized void requestTask(TaskEntry entry){
+		synchronized(entry){
+			entry.setState(TaskEntry.StateType.REQUESTED);
+		}
 		e.eventTaskRequest(entry.getId());
 		synchronized(pendingTasks){
 			pendingTasks.add(entry);
@@ -122,7 +132,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 				handleTask(tId, task);
 			break;
 		case NODE_STEAL_REQUEST:
-			handleNodeSteal((NodeStealRequestMessage)tmsg, msg.getSrc());
+			handleNodeStealRequest((NodeStealRequestMessage)tmsg, msg.getSrc());
 		default:
 			super.receive(msg);
 		}
@@ -135,6 +145,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 */
 	protected void handleTask(TaskID id, Task task){
 		//TODO SOMETHING NOT WORKING HERE
+		e.eventWarning("I RECEIVED " + id.toString());
 		TaskEntry entry = null;
 		synchronized(pendingTasks){
 			for (TaskEntry i : pendingTasks){
@@ -177,6 +188,7 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 		}
 		else
 			e.eventWarning(" Received task " + id.toString() + ", but not in pendingTasks");
+		workingTasks.remove(entry);
 	}
 	
 	
@@ -217,26 +229,32 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 * Searches for pending tasks that are assigned to itself and updates them to 
 	 * @param src
 	 */
-	protected void handleNodeSteal(NodeStealRequestMessage m, Address stealer){
+	protected void handleNodeStealRequest(NodeStealRequestMessage m, Address stealer){
 		ArrayList<TaskEntry> array = new ArrayList<TaskEntry>();
 		int qty = m.getTasksRequested();
 		synchronized(tasksIndex){
 			for (TaskEntry t : tasksIndex)
+				synchronized(t){
 				if (array.size() == qty)
 					break;
-				else if (t.getHandler().equals(info.getAddress()) && 
-						(t.getState() == StateType.SUBMITTED || t.getState() == StateType.UNDEFINED  )){
-					array.add(new TaskEntry(t.getId(),stealer));	
+					else if (t.getHandler().equals(info.getAddress()) && 
+							(t.getState() == StateType.SUBMITTED || t.getState() == StateType.UNDEFINED  )){
+						array.add(new TaskEntry(t.getId(),stealer));	
+						t.setHandler(stealer);
+					}
 				}
 		}
 		e.eventNodeStealResponse(array.size() > 0, info.getAddress(), stealer);
+		String str = new String();
 		for (TaskEntry t : array){
 			try {
 				channel.send(null, new TaskNotificationMessage(MessageType.TASK_STATE, t));
 			} catch (Exception e1) {
 				e.eventError("Couldn't make an update on a Task state. Are you still connected to the cluster?");
 			}
+			str += "\n\t" + t.getId().toString();
 		}
+		e.eventWarning("Steal detail:" + str);
 	}
 	
 	
@@ -288,9 +306,28 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 */
 	@Override
 	public void setFinished(boolean finished){
-		super.setFinished(finished);
-		if (!finished)
+		//TODO Fix This!
+		if (!finished){
+			flagLock.lock();
+			flag = false;
+			super.setFinished(finished);
+			flagLock.unlock();
 			start();
+		}
+		else
+			super.setFinished(finished);
 	}
+
+
+	public boolean isFlag() {
+		return flag;
+	}
+
+
+	public void setFlag(boolean flag) {
+		this.flag = flag;
+	}
+	
+	
 	
 }
