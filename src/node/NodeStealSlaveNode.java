@@ -23,24 +23,47 @@ public class NodeStealSlaveNode extends SlaveNode {
 	 * Requests 2 times the pool size
 	 */
 	@Override
-	protected void start() {
-		if (!finishedLock.tryLock()){
-			finishedLock.lock();
-			flagLock.lock();
-			setFlag(true);
-			flagLock.unlock();
-		}
-		while (getGlobalState() == WORKING && getLocalState()== WORKING && (!isFinished() || isFlag())){
+	public void run() {
+//		if (!finishedLock.tryLock()){
+//			finishedLock.lock();
+//			flagLock.lock();
+//			setFlag(true);
+//			flagLock.unlock();
+//		}
+		e.eventWarning("Starting RUN in new thread");
+		while(true){
+//		while (getGlobalState() == WORKING && getLocalState()== WORKING && (!isFinished() || isFlag())){
 			//Waiting
-			while(pendingTasks.size() >= 2*maxThreads)
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e1) {
-					e.eventError("Thread.sleep\n" + e1.getCause());
+				while (pendingTasks.size() >= 2*maxThreads )
+					try {
+						Thread.sleep(1000);
+						e.eventWarning("Wake up from waiting sleep");
+					} catch (InterruptedException e1) {
+						e.eventError("Thread.sleep\n" + e1.getCause());
+					}
+				while( getGlobalState() != WORKING || getLocalState()!= WORKING )
+					try {
+						Thread.sleep(100000);
+						e.eventWarning("Wake up from common sleep");
+					} catch (InterruptedException e1) {
+						e.eventError("Thread.sleep\n" + e1.getCause());
+					}
+			//finished
+				int time = 2000;
+				while(time<5000000 && isFinished()){
+					try{
+						Thread.sleep(time);
+						e.eventWarning("Wake up from finished sleep");
+					}catch (InterruptedException e1) {
+						e.eventError("Thread.sleep\n" + e1.getCause());
+					}
+					time *= 2;
 				}
+				e.eventWarning("Time to fetch");
 			//Fetch & Request
 			TaskEntry entry = fetchTask();
 			if(entry != null){
+				setFinished(false);
 				requestTask(entry);
 			}
 			else {
@@ -50,7 +73,7 @@ public class NodeStealSlaveNode extends SlaveNode {
 				setFinished(true);
 			}
 		}
-		finishedLock.unlock();
+//		finishedLock.unlock();
 	}
 	
 	

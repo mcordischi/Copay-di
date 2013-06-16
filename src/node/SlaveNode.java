@@ -41,7 +41,7 @@ import algorithm.TaskStealingStrategy;
  * @author marto
  *
  */
-public abstract class SlaveNode extends TasksNode implements Slave {
+public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 
 	protected final ExecutorService executor;
 	
@@ -69,8 +69,16 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	 * This method contain the task fetching and/or stealing.
 	 * When implementing, be careful of synchronization 
 	 */
-	protected abstract void start();
+	public abstract void run();
 	
+	
+	/**
+	 * Same method that {@link #run()}, but this one can be called with no thread creation
+	 */
+	public void start(){
+		Thread runnable = new Thread(this,"run Thread");
+		runnable.start();
+	}
 	
 	
 	/**
@@ -108,15 +116,15 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	public void setLocalState(boolean localState) {
 		boolean oldLocalState = getLocalState();
 		super.setLocalState(localState);
-		if( oldLocalState == PAUSE && !isFinished() && localState == WORKING)
-			start();
+//		if( oldLocalState == PAUSE && !isFinished() && localState == WORKING)
+//			start();
 	}
 
 	
 	@Override
 	protected void setGlobalState(boolean state){
 		super.setGlobalState(state);
-		start();
+//		start();
 	}
 
 	@Override
@@ -308,16 +316,21 @@ public abstract class SlaveNode extends TasksNode implements Slave {
 	public void setFinished(boolean finished){
 		//TODO Fix This!
 		if (!finished){
-			flagLock.lock();
-			flag = false;
+//			flagLock.lock();
+//			flag = false;
 			super.setFinished(finished);
-			flagLock.unlock();
-			start();
+//			flagLock.unlock();
+//			start();
 		}
 		else
 			super.setFinished(finished);
 	}
 
+	@Override
+	public void connect(String cluster){
+		super.connect(cluster);
+		start();
+	}
 
 	public boolean isFlag() {
 		return flag;

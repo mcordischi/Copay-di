@@ -28,7 +28,7 @@ public class TaskStealSlaveNode extends SlaveNode {
 	}
 
 	@Override
-	protected void start() {
+	public void run() {
 		while (getGlobalState() == WORKING && getLocalState()== WORKING && !isFinished()){
 			TaskEntry entry = fetchTask();
 			if(entry != null){
