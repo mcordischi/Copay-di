@@ -85,7 +85,7 @@
 \end{center}
 \end{titlepage}
 
-\section*{Resumen}
+\chapter*{Resumen}
 
 Como trabajo final de la cátedra de Computación Paralela y Distribuida, se ha realizado un sistema distribuido para el procesamiento de tareas de cualquier tipo sin dependencia entre ellas. Este framework desarrollado podrá ser utilizado para la realización de sistemas grid, dejando transparente todo el trabajo necesario para conexión de nodos, interacción entre ellos, y ejecución de tareas.
 
@@ -93,9 +93,9 @@ Este informe dará las nociones generales del sistema, notificará las principal
 
 
 
-\section*{Introducción}
+\chapter*{Introducción}
 
-\section*{Desarrollo}
+\chapter*{Desarrollo}
 
 \subsection*{Nociones generales del sistema}
 
@@ -129,12 +129,13 @@ Estos 3 tipos de componentes definen el sistema. Como soporte a ellos, también 
 
 \begin{itemize}
 	\item \textbf{Políticas:} empaquetadas en elementos del sistema sirven para determinar comportamientos de programación (scheduling) y de robos.
-	\item \textbf{Interfaz:} notifican eventos del sistema.
+	\item \textbf{Eventos:} notifaciones de los nodos.
 \end{itemize}
 
 A continuación, se detallarán los elementos principales del sistema y sus funciones.
 
 \subsubsection*{Nodos}
+\label{sec:nodos}
 
 %TODO Diagrama de componentes
 
@@ -151,8 +152,10 @@ El sistema define 4 tipos de nodos, mostrados en \ref{fig:interfacesNodos}, los 
 
 Todos los nodos poseen un estado global del cluster, el cual incluye la lista de todos los nodos y su información, a través de la interfaz \textit{NodeInformation}; y los datos básicos pertenecientes a todas las tareas que están trabajando, pendientes o finalizadas a través de la clase \textit{TaskEntry}.
 
-%TODO Imagen de la jerarquía de interfaces de nodos
-%TODO Imagen de la jerarquía de clases de nodos
+%TODO Imagen de la jerarquía de interfaces de nodos fig:interfacesNodos
+\label{fig:interfacesNodos}
+%TODO Imagen de la jerarquía de clases de nodos fig:clasesNodos
+\label{fig:clasesNodos}
 
 \subsubsection*{Tareas}
 
@@ -166,17 +169,34 @@ Como se puede observar en \ref{img:secuenciaTarea}, una vez que se le solicita u
 
 Las tareas serán ejecutadas en un nodo, el cual será determinado inicialmente por las políticas de scheduling del \textit{Master}, con posibles variaciones debido a los robos. Estas características deberán ser establecidas y desarrolladas por el programador que desee utilizar el sistema.
 
-
-
 Cabe destacar que también se ha implementado una subclase especial de tarea, la cual permite que la misma se pause ante necesidades especiales del \textit{Slave}. De todas formas, hasta el momento el sistema no aprovecha esta característica.
 
 \subsubsection*{Mensajes}
 
-Internos al sistema y completamente transparente, los datos enviados a través del cluster son realizados a través del paquete de clases de \textit{Message}.
+Internos al sistema y completamente transparente, los datos enviados a través del cluster son realizados a través del paquete de clases de \textit{Message}. Existen distintos tipos de mensajes, los cuales se muestran en \ref{img:mensajes}.
 
-\subsection*{Racional de diseño}
+\subsubsection*{Políticas}
+
+Tanto el scheduling inicial del \textit{Master} como la elección de víctimas del \textit{Slave} que roba necesitará una política determinada. Mediante el patrón de diseño \textbf{Strategy}, las políticas podrán ser definidas por el programador y cambiadas en tiempo de ejecución. Los tipos de política son:
+
+\begin{itemize}
+	\item \textbf{SchedulingStrategy:} Utilizado por el \textit{Master} y ejecutado cada vez que se inserte una nueva tarea al cluster, el algoritmo de scheduling deberá determinar un nodo que ejecute la nueva tarea en base a información sobre estos.
+	\item \textbf{StealingStrategy:} cuando un \textit{Slave} termina sus tareas, puede aplicar un algoritmo para seleccionar una tarea o nodo como víctima. La información utilizada por estas políticas será información sobre nodos o tareas. 
+Se debe aclarar que si no se define políticas de robo, el \textit{Slave} nunca robará, convirtiéndose así en un consumidor reactivo.
+\end{itemize}
+
+La forma de utilizar las políticas será detallada en la sección \ref{sec:util}
+
+\subsubsection*{Eventos}
+
+Los nodos informarán cambios en los estados de las tareas y del cluster en general a través de la interfaz \textit{Eventable}, la cual podrá ser utilizada si se requiere adquirir información detallada.
+
 
 \subsection*{Utilización y aplicaciones}
+\label{sec:util}
+
+
 
 \subsection*{Historial de cambios}
 
+\end{document}

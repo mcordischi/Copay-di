@@ -24,7 +24,6 @@ public class NodeStealSlaveNode extends SlaveNode {
 	 */
 	@Override
 	protected void start() {
-		//TODO FIX THIS!
 		if (!finishedLock.tryLock()){
 			finishedLock.lock();
 			flagLock.lock();

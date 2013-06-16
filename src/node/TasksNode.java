@@ -20,6 +20,7 @@ import org.jgroups.View;
 import org.jgroups.util.Util;
 
 import event.Eventable;
+import event.NullEventInterface;
 import task.*;
 
 public class TasksNode extends ReceiverAdapter implements Node {
@@ -45,7 +46,10 @@ public class TasksNode extends ReceiverAdapter implements Node {
 
 	
 	public TasksNode(Eventable e, boolean initialLocalState){
-		this.e = e;
+		if (e==null)
+			this.e = new NullEventInterface();
+		else
+			this.e = e;
 		nodeType = NodeType.UNDEFINED;
 		maxThreads = 0;
 		finished = false;
