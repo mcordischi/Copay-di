@@ -308,6 +308,31 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 		}
 	}
 	
+	/**
+	 * Override from TasksNode. Slave must also check the pendingTasks and Working tasks structures.
+	 */
+	@Override
+	protected void editTasks(Address address){
+		synchronized(tasksIndex){
+			for(TaskEntry te : tasksIndex){
+				if (te.getOwner().equals(address)){
+					tasksIndex.remove(te);
+					synchronized(pendingTasks){
+						pendingTasks.remove(te);
+					}
+					if (workingTasks.containsKey(te)){
+						Future ft = workingTasks.get(te);
+						ft.cancel(true);
+						workingTasks.remove(te);
+					}
+				}
+				if (te.getHandler().equals(address)){
+					te.setHandler(null);
+					te.setState(TaskEntry.StateType.SUBMITTED);
+				}
+			}
+		}
+	}
 	
 	/**
 	 * If not finished, calls the start() method.

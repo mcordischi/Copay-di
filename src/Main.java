@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Vector;
+import java.util.concurrent.Future;
 
 import task.ExceptionTask;
 import task.FutureTaskResult;
@@ -105,7 +106,17 @@ public class Main {
 	        	((TasksNode)masters.get(0)).notifyInformation();
 	        	break;
 	        case "r": //viewResults
-	        	//TODO
+	        	for (int i=0; i< futures.size();i++){
+	        		Vector<FutureTaskResult> vector = futures.get(i);
+	        		System.out.println("\n\n-----MASTER " + i  + "-----");
+		        	for (FutureTaskResult fut : vector){
+		        		System.out.print(fut.getTaskID().toString());
+		        		if (fut.isDone())
+		        			System.out.println(" is done.");
+		        		else
+		        			System.out.println(" NOT COMPLETED");
+		        	}
+	        	}
 	        	break;
 	        case "u": //submit 100 tasks
 	        	for (int masterPos = 0 ; masterPos<masters.size();masterPos++)

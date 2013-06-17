@@ -4,6 +4,7 @@ package node;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 
 
 import message.*;
@@ -20,6 +21,7 @@ import event.Eventable;
 import algorithm.SchedulerStrategy;
 
 import task.*;
+import task.TaskEntry.StateType;
 
 public class MasterNode extends TasksNode implements Master {
 	
@@ -193,4 +195,24 @@ public class MasterNode extends TasksNode implements Master {
 	}
 
 
+	/**
+	 * Override from TasksNode. Master must assign a new slave the submitted tasks.
+	 */
+	@Override
+	protected void editTasks(Address address){
+		Vector<TaskEntry> tasks = new Vector<TaskEntry>();
+		synchronized(tasksIndex){
+			for(TaskEntry te : tasksIndex){
+				if (te.getOwner().equals(address)){
+					tasksIndex.remove(te);
+				}
+				if (te.getOwner().equals(info.getAddress()) && te.getHandler().equals(address) && te.getState()!= StateType.FINISHED){
+					tasks.add(te);
+				}
+			}
+		}
+		if (tasks.size() > 0)
+			schStrat.assign(tasks, nodesInfo);
+	}
+	
 }

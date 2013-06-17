@@ -4,7 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.Future;
 
 import message.NodeInfoMessage;
 import message.TaskMessage;
@@ -250,6 +252,77 @@ public class TasksNode extends ReceiverAdapter implements Node {
 			nodesInfo.addAll(inInfo);
 		}
 	}
+	
+	/**
+	 * Must do some work when a node crashes
+	 */
+	public void viewAccepted(View new_view) {
+		if (actualView != null){
+			if (new_view.size() < actualView.size()){
+				Address missingNode = searchMissingNode(new_view,actualView);
+				editTasks(missingNode);
+				e.eventNodeCrash(missingNode);
+			}
+			else{
+				Address newNode = searchNewNode(new_view,actualView);
+				e.eventNodeAvailable(newNode);
+			}
+		}
+		actualView = new_view;
+	}
+	
+	
+	/**
+	 * Refresh the tasksIndex. If the node that crashed was a owner, the task is removed, if it was the
+	 * responsible for a task, it sets the handler to null.
+	 * @param address
+	 */
+	protected void editTasks(Address address){
+		synchronized(tasksIndex){
+			for(TaskEntry te : tasksIndex){
+				if (te.getOwner().equals(address)){
+					tasksIndex.remove(te);
+				}
+				if (te.getHandler().equals(address)){
+					te.setHandler(null);
+					te.setState(TaskEntry.StateType.SUBMITTED);
+				}
+			}
+		}
+	}
+	
+	
+	/**
+	 * Searches for the missing address and returns it
+	 * @param newView
+	 * @param oldView
+	 * @return the missing address
+	 */
+	private Address searchMissingNode(View newView,View oldView){
+		List<Address> n = newView.getMembers();
+		List<Address> o = oldView.getMembers();
+		for (int i=0;i<n.size();i++)
+			if (n.get(i).equals(o.get(i)))
+				return o.get(i);
+		return null;
+	}
+	
+	/**
+	 * Searches for the new address and returns it
+	 * @param newView
+	 * @param oldView
+	 * @return the new address
+	 */
+	private Address searchNewNode(View newView,View oldView){
+		List<Address> n = newView.getMembers();
+		List<Address> o = oldView.getMembers();
+		for (int i=0;i<n.size();i++)
+			if (n.get(i).equals(o.get(i)))
+				return n.get(i);
+		return null;
+	}
+	
+	
 	
 //GETTERS or SETTERS	
 	
