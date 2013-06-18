@@ -4,6 +4,11 @@ import java.util.Collection;
 
 import task.TaskEntry;
 
+/**
+ * No steals, not today.
+ * @author marto
+ *
+ */
 public class NullStealingStrategy implements TaskStealingStrategy {
 
 	@Override

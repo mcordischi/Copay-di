@@ -1,5 +1,11 @@
 package task;
 
+
+/**
+ * Test Class that always throws exception when executed
+ * @author marto
+ *
+ */
 public class ExceptionTask implements Task {
 
 	@Override

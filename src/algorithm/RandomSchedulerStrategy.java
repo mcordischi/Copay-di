@@ -9,6 +9,11 @@ import org.jgroups.View;
 
 import task.TaskEntry;
 
+/**
+ * 
+ * @author marto
+ *
+ */
 public class RandomSchedulerStrategy implements SchedulerStrategy {
 	
 	Random random = new Random();

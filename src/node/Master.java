@@ -1,7 +1,11 @@
 package node;
 import task.*;
 
-
+/**
+ * Interface used for easy usage of the {@link MasterNode}.
+ * @author marto
+ *
+ */
 public interface Master extends Node{
 	
 	/**

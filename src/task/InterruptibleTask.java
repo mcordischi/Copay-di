@@ -1,12 +1,18 @@
 package task;
 
-public class InterruptableTask implements Task {
+
+/**
+ * Not used within the TaskDistribution system, but it would be nice to use it if the system implemented interruptible steals.
+ * @author marto
+ *
+ */
+public class InterruptibleTask implements Task {
 
 	private Object result;
 	private Task task;
 	private volatile boolean interrupted = false;
 	
-	public InterruptableTask(Task task){
+	public InterruptibleTask(Task task){
 		this.task=task;
 	}
 	

@@ -7,6 +7,11 @@ import org.jgroups.Address;
 import message.NodeStealRequestMessage;
 import node.NodeInformation;
 
+/**
+ * 
+ * @author marto
+ *
+ */
 public class FirstNodeStealingStrategy implements NodeStealingStrategy {
 
 	@Override

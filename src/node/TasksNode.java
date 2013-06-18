@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Future;
@@ -25,7 +26,20 @@ import event.Eventable;
 import event.NullEventInterface;
 import task.*;
 
-public class TasksNode extends ReceiverAdapter implements Node {
+
+/**
+ * This class contains all the basic functionality needed for task Support. Slaves and Masters must inherit from this and override 
+ * some methods, adding specific functionality.
+ * 
+ * It also implements the Monitor interface, to avoid the creation of an almost useless class.
+ * 
+ * Pending jobs
+ * - Improve NodeInformation usage 
+ * 
+ * @author marto
+ *
+ */
+public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	
 	protected Eventable e;
 
@@ -80,12 +94,12 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	}
 	
 	@Override
-	public boolean getGlobalState() {
+	public boolean getSystemState() {
 		return globalState;	
 	}
 	
 	public void setSystemState(boolean globalState){
-		boolean oldState = getGlobalState();
+		boolean oldState = getSystemState();
 		setGlobalState(globalState);
 		try {
 			if (oldState != globalState){
@@ -429,6 +443,21 @@ public class TasksNode extends ReceiverAdapter implements Node {
 			e.eventWarning("The tasks Index is empty");
 		for (TaskEntry entry : tasksIndex)
 			e.notifyTask(entry);
+	}
+
+	@Override
+	public View getClusterInfo() {
+		return actualView;
+	}
+
+	@Override
+	public Collection<TaskEntry> getTasksInfo() {
+		return tasksIndex;
+	}
+
+	@Override
+	public Collection<NodeInformation> getNodeInfo() {
+		return nodesInfo;
 	}
 	
 }

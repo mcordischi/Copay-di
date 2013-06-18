@@ -22,6 +22,14 @@ import algorithm.SchedulerStrategy;
 import task.*;
 import task.TaskEntry.StateType;
 
+/**
+ * Class implementing Master interface. Inherits from {@link TasksNode} the basic node's functionality. 
+ * When submitting a {@link Task}, it uses a given {@link SchedulerStrategy} to assign a handler. If a Handler crashes, 
+ * it will also use the strategy to re assign handler.  
+ *  
+ * @author marto
+ *
+ */
 public class MasterNode extends TasksNode implements Master {
 	
 

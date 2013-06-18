@@ -38,6 +38,12 @@ public class Main {
 		BufferedReader in;
 		String str; 
 
+		System.out.println("THIS IS A SAMPLE PROGRAM \n"
+						+ "Its only purpose is to show the basic functionalities. \n" 
+						+ "You can get the source code in http://github.com/tinchofm/Copay-di"
+						+"You must press enter to display the menu. Press enter to get started..")
+						;
+		
 		
 		boolean finish = false;
 		Vector< Vector<FutureTaskResult> > futures  = new Vector< Vector<FutureTaskResult> >();
@@ -157,7 +163,7 @@ public class Main {
 	        }
 		}
         
-       
+       System.out.println("Goodbye!");
         
 	}
 

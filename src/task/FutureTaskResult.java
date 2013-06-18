@@ -8,6 +8,12 @@ import java.util.concurrent.TimeoutException;
 
 import node.Master;
 
+/**
+ * Class implementing {@link Future} interface. The result can be set using the {@link #set(Object)} method.
+ * @author marto
+ *
+ * @param <V> The result of the future
+ */
 public class FutureTaskResult<V> implements Future<V> {
 	
 	V result = null;

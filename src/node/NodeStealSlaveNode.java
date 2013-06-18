@@ -10,6 +10,14 @@ import task.TaskEntry;
 import algorithm.NodeStealingStrategy;
 import event.Eventable;
 
+
+/**
+ * Just a common Slave, with stealing at Node level. When the Slave has no more tasks, it sends a request to a victim 
+ * chosen with a {@link NodeStealingStrategy} given.
+ *  
+ * @author marto
+ *
+ */
 public class NodeStealSlaveNode extends SlaveNode {
 
 	protected NodeStealingStrategy stlStrat;
@@ -40,7 +48,7 @@ public class NodeStealSlaveNode extends SlaveNode {
 					} catch (InterruptedException e1) {
 						e.eventError("Thread.sleep\n" + e1.getCause());
 					}
-				while( getGlobalState() != WORKING || getLocalState()!= WORKING )
+				while( getSystemState() != WORKING || getLocalState()!= WORKING )
 					try {
 						Thread.sleep(5000);
 					} catch (InterruptedException e1) {

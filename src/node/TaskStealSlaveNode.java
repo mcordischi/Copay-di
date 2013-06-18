@@ -11,9 +11,11 @@ import event.Eventable;
 
 
 /**
+ * Simple Slave, with Stealing at task level. When the slave has no more tasks, it simply steals and execute with no request.
+ * There could be some synchronization problems, specially when 2 Slaves steal the same Task at the same time. Now you are warned.
+ * 
  * CAUTION: need maintenance.
- *  - Work with flags
- *  - Steal Control
+ * Last changes not tested
  * @author marto
  *
  */
@@ -27,21 +29,39 @@ public class TaskStealSlaveNode extends SlaveNode {
 		this.stlStrat = stlStrat;
 	}
 
-	@Override
 	public void run() {
-		while (getGlobalState() == WORKING && getLocalState()== WORKING && !isFinished()){
-			TaskEntry entry = fetchTask();
-			if(entry != null){
-				while(pendingTasks.size() >= maxThreads)
+		while(!destroyFlag){
+			//Waiting
+				while (pendingTasks.size() >= 2*maxThreads )
 					try {
 						Thread.sleep(1000);
 					} catch (InterruptedException e1) {
 						e.eventError("Thread.sleep\n" + e1.getCause());
 					}
+				while( getSystemState() != WORKING || getLocalState()!= WORKING )
+					try {
+						Thread.sleep(5000);
+					} catch (InterruptedException e1) {
+						e.eventError("Thread.sleep\n" + e1.getCause());
+					}
+			//finished
+				int time = 2000;
+				while(time<50000 && isFinished()){
+					try{
+						Thread.sleep(time);
+					}catch (InterruptedException e1) {
+						e.eventError("Thread.sleep\n" + e1.getCause());
+					}
+					time *= 1.2;
+				}
+				e.eventWarning("Time to fetch");
+			//Fetch or Steal & Request
+			TaskEntry entry = fetchTask();
+			if(entry != null){
+				setFinished(false);
 				requestTask(entry);
 			}
 			else {
-				e.eventLocalCompletion();
 				setFinished(true);
 			}
 		}

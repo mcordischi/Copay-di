@@ -4,7 +4,11 @@ import java.io.Serializable;
 import org.jgroups.Address;
 import org.jgroups.util.Streamable;
 
-
+/**
+ * Contains the {@link Task} information, sent to all the nodes of the cluster.
+ * @author marto
+ *
+ */
 public class TaskEntry implements Serializable{
 	private TaskID id;
 	private Address handler;

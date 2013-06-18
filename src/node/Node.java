@@ -19,7 +19,7 @@ public interface Node extends Receiver {
 		 * Returns true if the cluster is working. False if it has finished or 
 		 * it is on pause.
 		 */
-		public abstract boolean getGlobalState();
+		public abstract boolean getSystemState();
 
 		
 		/**

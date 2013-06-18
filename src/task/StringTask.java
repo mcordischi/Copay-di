@@ -7,6 +7,12 @@ import java.io.Serializable;
 import org.jgroups.util.Streamable;
 import org.jgroups.util.Util;
 
+
+/**
+ * Just a Task used for testing. It returns a String.
+ * @author marto
+ *
+ */
 public class StringTask implements Task,Streamable {
 
 	String result;

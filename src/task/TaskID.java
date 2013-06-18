@@ -3,7 +3,11 @@ import java.io.Serializable;
 
 import org.jgroups.Address;
 
-
+/**
+ * Unique ID for a task, that is a combination of the owner's address and an integer. 
+ * @author marto
+ *
+ */
 public class TaskID implements Serializable {
 	
 	private Address owner;
