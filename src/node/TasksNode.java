@@ -254,14 +254,20 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	}
 	
 	/**
-	 * Must do some work when a node crashes
+	 * Must do some work when a node crashes. It creates a new thread that executes the method {@link #handleNodeCrash(Address)}, 
+	 * because it may be a long running action
 	 */
-	public void viewAccepted(View new_view) {
+	public void viewAccepted(final View new_view) {
 		if (actualView != null){
 			if (new_view.size() < actualView.size()){
-				Address missingNode = searchMissingNode(new_view,actualView);
-				editTasks(missingNode);
-				e.eventNodeCrash(missingNode);
+					final Address missingNode = searchMissingNode(new_view,actualView);
+					//run handleNodeCrash in a new thread, it may get long
+					new Runnable() {
+						@Override
+						public void run() {
+							handleNodeCrash(missingNode);
+						}
+					}.run();
 			}
 			else{
 				Address newNode = searchNewNode(new_view,actualView);
@@ -271,6 +277,22 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		actualView = new_view;
 	}
 	
+	/**
+	 * Called by {@link #viewAccepted(View)}, it handles tasks of the crashed node.
+	 * @param missingNode
+	 */
+	protected void handleNodeCrash(Address missingNode){
+				editTasks(missingNode);
+				synchronized(nodesInfo){
+					for(NodeInformation i : nodesInfo)
+						if (i.getAddress().equals(missingNode)){
+							nodesInfo.remove(i);
+							break;
+						}
+				}
+				e.eventNodeCrash(missingNode);		
+	}
+	
 	
 	/**
 	 * Refresh the tasksIndex. If the node that crashed was a owner, the task is removed, if it was the
@@ -278,6 +300,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	 * @param address
 	 */
 	protected void editTasks(Address address){
+		e.eventWarning("Editing tasks from " + address.toString());
 		synchronized(tasksIndex){
 			for(TaskEntry te : tasksIndex){
 				if (te.getOwner().equals(address)){
@@ -302,7 +325,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 		List<Address> n = newView.getMembers();
 		List<Address> o = oldView.getMembers();
 		for (int i=0;i<n.size();i++)
-			if (n.get(i).equals(o.get(i)))
+			if (!n.get(i).equals(o.get(i)))
 				return o.get(i);
 		return null;
 	}
@@ -328,7 +351,7 @@ public class TasksNode extends ReceiverAdapter implements Node {
 	
 	
 	/**
-	 * Return a Vector cotaining the TaskEntries that matches the owner and handler 
+	 * Return a Vector containing the TaskEntries that matches the owner and handler 
 	 * @param owner
 	 * @param handler
 	 * @return

@@ -30,34 +30,31 @@ public class NodeStealSlaveNode extends SlaveNode {
 //			setFlag(true);
 //			flagLock.unlock();
 //		}
-		e.eventWarning("Starting RUN in new thread");
-		while(true){
+//		e.eventWarning("Starting RUN in new thread");
+		while(!destroyFlag){
 //		while (getGlobalState() == WORKING && getLocalState()== WORKING && (!isFinished() || isFlag())){
 			//Waiting
 				while (pendingTasks.size() >= 2*maxThreads )
 					try {
 						Thread.sleep(1000);
-						e.eventWarning("Wake up from waiting sleep");
 					} catch (InterruptedException e1) {
 						e.eventError("Thread.sleep\n" + e1.getCause());
 					}
 				while( getGlobalState() != WORKING || getLocalState()!= WORKING )
 					try {
-						Thread.sleep(100000);
-						e.eventWarning("Wake up from common sleep");
+						Thread.sleep(5000);
 					} catch (InterruptedException e1) {
 						e.eventError("Thread.sleep\n" + e1.getCause());
 					}
 			//finished
 				int time = 2000;
-				while(time<5000000 && isFinished()){
+				while(time<50000 && isFinished()){
 					try{
 						Thread.sleep(time);
-						e.eventWarning("Wake up from finished sleep");
 					}catch (InterruptedException e1) {
 						e.eventError("Thread.sleep\n" + e1.getCause());
 					}
-					time *= 2;
+					time *= 1.2;
 				}
 				e.eventWarning("Time to fetch");
 			//Fetch & Request

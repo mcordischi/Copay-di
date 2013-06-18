@@ -49,9 +49,8 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 	protected Vector<TaskEntry> pendingTasks = new Vector<TaskEntry>();
 	protected Map<TaskEntry,Future<Object> > workingTasks = new ConcurrentHashMap<TaskEntry, Future<Object> >();
 	
-	protected Lock finishedLock;
-	protected Lock flagLock;
-	private boolean flag;
+	
+	protected boolean destroyFlag;
 	
 	public SlaveNode(Eventable e, int maxThreads) {
 		super(e,PAUSE);
@@ -59,9 +58,7 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 		this.executor = Executors.newFixedThreadPool(maxThreads);
 //		this.executor = new ScheduledThreadPoolExecutor(maxThreads);
 		nodeType = NodeType.SLAVE;
-		finishedLock = new ReentrantLock();
-		flagLock = new ReentrantLock();
-		flag = true;
+		destroyFlag = false;
 	}
 	
 	
@@ -110,6 +107,15 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 	}
 	
 	/**
+	 * Disconnects and kills the fetching thread.
+	 */
+	@Override
+	public void disconnect(){
+		super.disconnect();
+		destroyFlag = true; 
+	}
+	
+	/**
 	 * calls start() if new local state is true
 	 */
 	@Override
@@ -152,7 +158,6 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 	 * @throws Exception 
 	 */
 	protected void handleTask(TaskID id, Task task){
-		//TODO SOMETHING NOT WORKING HERE
 		e.eventWarning("I RECEIVED " + id.toString());
 		TaskEntry entry = null;
 		synchronized(pendingTasks){
@@ -170,7 +175,6 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 				e.eventWarning("I am removing " + entry.toString());
 			}
 			
-			//TODO taskExecution is not called
 			e.eventTaskExecution(entry);
 			entry.setState(TaskEntry.StateType.WORKING);
 			try {
@@ -203,15 +207,11 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 	@Override
 	protected void handleTaskUpdate(TaskEntry entry){
 		super.handleTaskUpdate(entry);
-//		if (entry.getHandler().equals(info.getAddress()) && entry.getState()!=StateType.FINISHED)
-//			start();
 	}
 	
 	@Override
 	protected void handleAddTask(TaskEntry entry){
 		super.handleAddTask(entry);
-//		if (entry.getHandler().equals(info.getAddress()) && entry.getState()!=StateType.FINISHED)
-//			start();
 	}
 	
 	/**
@@ -334,38 +334,13 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 		}
 	}
 	
-	/**
-	 * If not finished, calls the start() method.
-	 */
-	@Override
-	public void setFinished(boolean finished){
-		//TODO Fix This!
-		if (!finished){
-//			flagLock.lock();
-//			flag = false;
-			super.setFinished(finished);
-//			flagLock.unlock();
-//			start();
-		}
-		else
-			super.setFinished(finished);
-	}
+
 
 	@Override
 	public void connect(String cluster){
 		super.connect(cluster);
 		start();
 	}
-
-	public boolean isFlag() {
-		return flag;
-	}
-
-
-	public void setFlag(boolean flag) {
-		this.flag = flag;
-	}
-	
 	
 	
 }

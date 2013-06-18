@@ -91,7 +91,10 @@ public class DebugInterface implements Eventable {
 
 	@Override
 	public void eventNodeCrash(Address node) {
-		System.out.println(prefix + ": Node Crashed\t" + node.toString());
+		if (node != null)
+			System.out.println(prefix + ": Node Crashed\t" + node.toString());
+		else
+			System.out.println(prefix + ": Unidentified node crashed");
 
 	}
 

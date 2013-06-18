@@ -14,7 +14,6 @@ import node.NodeInformation.NodeType;
 import org.jgroups.Address;
 import org.jgroups.JChannel;
 import org.jgroups.Message;
-import org.jgroups.View;
 
 import event.Eventable;
 
@@ -53,8 +52,8 @@ public class MasterNode extends TasksNode implements Master {
 	}
 
 	@Override
-	public void viewAccepted(View view) {
-		super.viewAccepted(view);
+	protected void handleNodeCrash(Address missingNode) {
+		super.handleNodeCrash(missingNode);
 		//Schedule tasks that has no handler and the owner is this
 		scheduleTasks(getTasks(channel.getAddress(),null));
 	}
@@ -116,7 +115,17 @@ public class MasterNode extends TasksNode implements Master {
 	 * @param tasks : A vector of the tasks to schedule
 	 */
 	private void scheduleTasks(Vector<TaskEntry> tasks){
-		schStrat.assign(tasks,nodesInfo);
+		synchronized(nodesInfo){
+			schStrat.assign(tasks,nodesInfo);
+		}
+		
+		//Notify the cluster that the tasks changed
+		try {
+			for (TaskEntry entry :tasks)
+			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STATE,entry));
+				} catch (Exception e1) {
+					e.eventError("Submit Failed. Are you connected to the cluster?");
+				}
 	}
 	
 	@Override
@@ -194,25 +203,25 @@ public class MasterNode extends TasksNode implements Master {
 		}
 	}
 
-
-	/**
-	 * Override from TasksNode. Master must assign a new slave the submitted tasks.
-	 */
-	@Override
-	protected void editTasks(Address address){
-		Vector<TaskEntry> tasks = new Vector<TaskEntry>();
-		synchronized(tasksIndex){
-			for(TaskEntry te : tasksIndex){
-				if (te.getOwner().equals(address)){
-					tasksIndex.remove(te);
-				}
-				if (te.getOwner().equals(info.getAddress()) && te.getHandler().equals(address) && te.getState()!= StateType.FINISHED){
-					tasks.add(te);
-				}
-			}
-		}
-		if (tasks.size() > 0)
-			schStrat.assign(tasks, nodesInfo);
-	}
+//   DEPRECATED, now the superclass assigns null to handlers and the masterNode handleNodeCrash assign them
+//	/**
+//	 * Override from TasksNode. Master must assign a new slave the submitted tasks.
+//	 */
+//	@Override
+//	protected void editTasks(Address address){
+//		Vector<TaskEntry> tasks = new Vector<TaskEntry>();
+//		synchronized(tasksIndex){
+//			for(TaskEntry te : tasksIndex){
+//				if (te.getOwner().equals(address)){
+//					tasksIndex.remove(te);
+//				}
+//				if (te.getOwner().equals(info.getAddress()) && te.getHandler().equals(address) && te.getState()!= StateType.FINISHED){
+//					tasks.add(te);
+//				}
+//			}
+//		}
+//		if (tasks.size() > 0)
+//			schStrat.assign(tasks, nodesInfo);
+//	}
 	
 }

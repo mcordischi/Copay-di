@@ -7,6 +7,8 @@ import message.TaskMessage.MessageType;
 import org.jgroups.Address;
 import org.jgroups.Channel;
 
+import task.TaskID;
+
 //TODO implement automatic Updates
 
 public class TasksNodeInformation implements NodeInformation {
@@ -70,6 +72,13 @@ public class TasksNodeInformation implements NodeInformation {
 			return true;
 		return false;
 	}
+	
+	public boolean equals(Address address){
+		if (address.equals(this.address))
+			return true;
+		return false;
+	}
+	
 
 	@Override
 	public int getWorkingCapacity() {

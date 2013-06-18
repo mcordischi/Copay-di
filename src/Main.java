@@ -94,16 +94,36 @@ public class Main {
 	        	break;
         	}
 	        case "start": //start system
-	        	masters.get(0).setSystemState(true);
+	        	if (masters.size() > 0)
+	        		masters.get(0).setSystemState(true);
+	        	else if (slaves.size() >0)
+	        		slaves.get(0).setSystemState(true);
+	        	else
+	        		System.out.println("There are no Nodes!");
 	        	break;
 	        case "stop": //stop system
-	        	masters.get(0).setSystemState(false);
+	        	if (masters.size() > 0)
+	        		masters.get(0).setSystemState(false);
+	        	else if (slaves.size() >0)
+	        		slaves.get(0).setSystemState(false);
+	        	else
+	        		System.out.println("There are no Nodes!");
 	        	break;
 	        case "t": //viewTasks
-	        	((TasksNode)masters.get(0)).notifyTasksIndex();
+	        	if (masters.size() > 0)
+	        		((TasksNode)masters.get(0)).notifyTasksIndex();
+	        	else if (slaves.size() >0)
+	        		((TasksNode)slaves.get(0)).notifyTasksIndex();
+	        	else
+	        		System.out.println("There are no Nodes!");
 	        	break;
 	        case "i": //viewInfo
-	        	((TasksNode)masters.get(0)).notifyInformation();
+	        	if (masters.size() > 0)
+	        		((TasksNode)masters.get(0)).notifyInformation();
+	        	else if (slaves.size() >0)
+	        		((TasksNode)slaves.get(0)).notifyInformation();
+	        	else
+	        		System.out.println("There are no Nodes!");
 	        	break;
 	        case "r": //viewResults
 	        	for (int i=0; i< futures.size();i++){
