@@ -13,7 +13,9 @@
 % Paquete para frames
 \usepackage{framed}
 % Paquete grafico
-\usepackage{graphicx}
+\usepackage[pdftex]{graphicx}
+\DeclareGraphicsExtensions{.png,.jpg}
+\graphicspath{{images/}}
 %pseudocodigo
 \usepackage{algpseudocode}
 \usepackage{algorithm}
@@ -22,7 +24,11 @@
 \usepackage{fancyhdr}
 %Encoding con tildes
 \usepackage[utf8]{inputenc}
-
+%Bibliography
+\usepackage{url}
+%\usepackage{natbib}
+%\bibliographystyle{plainnat}
+\bibliographystyle{plain}
 % Encabezados
 %\title{}
 %\author{}
@@ -51,30 +57,31 @@
 
 % Upper part of the page. The '~' is needed because \\
 % only works if a paragraph has started.
-%\includegraphics[width=0.5\textwidth]{cuys.eps}~\\[1cm]
-
-\textsc{\LARGE UNICEN}\\[1.5cm]
 
 
+\textsc{\LARGE Universidad Nacional del Centro de la Provincia de Buenos Aires}\\[1.5cm]
+
+\includegraphics[width=0.5\textwidth]{UNICEN}~\\[1cm]
 
 % Title
 \HRule \\[0.4cm]
-{ \huge \bfseries Copay-di}\\[0.4cm]
+{ \huge \bfseries Computación Paralela y Distribuida}\\[0.4cm]
 
 \HRule \\[0.4cm]
 
 % Author and supervisor
 
 \begin{center}
-\textbf{}
+\textit{Sistema distribuido para el procesamiento de tareas}
 \end{center}
-~\\[3.5cm]
+~\\[1.5cm]
+
+\begin{center}
+Realizado por \textbf{Martín Cordischi}
+\end{center}
 
 
-\textit{}
-
-
-~\\[0.4cm]
+%~\\[0.4cm]
 \textit{} \textbf{} 
 
 \vfill
@@ -87,40 +94,47 @@
 
 \chapter*{Resumen}
 
-Como trabajo final de la cátedra de Computación Paralela y Distribuida, se ha realizado un sistema distribuido para el procesamiento de tareas de cualquier tipo sin dependencia entre ellas. Este framework desarrollado podrá ser utilizado para la realización de sistemas grid, dejando transparente todo el trabajo necesario para conexión de nodos, interacción entre ellos, y ejecución de tareas.
+Como trabajo final de la cátedra de Computación Paralela y Distribuida, se ha realizado un sistema distribuido para el procesamiento de tareas de cualquier tipo sin dependencia entre ellas. El framework podrá ser utilizado para la realización de sistemas grid, dejando transparente todo el trabajo necesario para conexión de nodos, interacción entre ellos, y ejecución de tareas.
 
-Este informe dará las nociones generales del sistema, notificará las principales decisiones adoptadas y detallará los elementos de interés para el funcionamiento de éste.
+Este informe dará las nociones generales del sistema, notificará las principales decisiones adoptadas y detallará los elementos de interés para el funcionamiento del framework. Este documento se organiza comenzando con una introducción y detallando los componentes principales del sistema; siguiendo por una explicación de la correcta utilización de estos, con un historial de cambios y las tareas a realizar; culminando por una conclusión y discusión.
 
 
 
 \chapter*{Introducción}
 
+En la actualidad existen grandes sistemas implementados para el procesamiento distribuido de tareas. Un ejemplo de esto el el grid World Community Grid\cite{url:WCG}, o Seti@Home\cite{url:seti}. Cada uno de ellos tiene sus peculiaridades, dadas por el tipo de tarea a realizar, el propósito de la red y la característica de sus nodos, entre otros.
+
+La cátedra de Computación Paralela y Distribuida ha propuesto realizar un sistema de procesamiento distribuido con control no centralizado y con la capacidad de robos entre los consumidores de tareas. Este proyecto tendrá como objetivo lograr un sistema flexible y con buena usabilidad para el programador que desee utilizarlo para proyectos reales o de investigación.
+
+
+
 \chapter*{Desarrollo}
 
-\subsection*{Nociones generales del sistema}
+\section*{Nociones generales del sistema}
 
 El objetivo principal del trabajo es la posibilidad de brindar procesamiento distribuido a tareas no dependientes a través de un sistema no centralizado, utilizando un modelo productor/consumidor. Como requerimiento funcional también se ha solicitado la posibilidad de establecer políticas de robo de trabajos entre los nodos consumidores.
 
-Para llegar a cumplir los requerimientos, se ha desarrollado una aplicación en Java\ref{Java} la cual es capaz de recibir y ejecutar tareas brindadas por el usuario a través de una interfaz sencilla, utilizando la potencia del procesamiento distribuido.
+Para llegar a cumplir los requerimientos, se ha desarrollado una aplicación en Java\cite{url:Java} la cual es capaz de recibir y ejecutar tareas brindadas por el usuario a través de una interfaz sencilla, utilizando la potencia del procesamiento distribuido.
 
-El sistema desarrollado utiliza las facilidades brindadas por la biblioteca JGroups\ref{JGroups} para abstracción de la comunicación entre nodos. Esta herramienta ha traído importantes ventajas para la correcta implementación y ha satisfecho completamente la necesidad de tener un módulo de comunicación.
+El sistema desarrollado utiliza las facilidades brindadas por la biblioteca JGroups\cite{url:JGroups} para abstracción de la comunicación entre nodos. Esta herramienta ha traído importantes ventajas para la correcta implementación y ha satisfecho completamente la necesidad de tener un módulo de comunicación.
 
-\subsection*{Características técnicas}
+\section*{Características técnicas}
 
 \begin{itemize}
 	\item \textbf{Tipo de sistema:} Framework.
 	\item \textbf{Propósito:} Procesamiento distribuido de tareas.
-    \item \textbf{Lenguaje:} Java\ref{Java}.
-    	\item \textbf{Bibliotecas externas:} Jgroups\ref{JGroups}.
+    \item \textbf{Lenguaje:} Java\cite{url:Java}.
+    	\item \textbf{Bibliotecas externas:} Jgroups\cite{url:JGroups}.
+    	\item \textbf{Código fuente:} \textit{github.com/tinchofm/Copay-di/}
 %   	\item \textbf{Licencia:} 
 \end{itemize}
 
-\subsection*{Descripción del sistema}
+\section*{Descripción del sistema}
 
-El sistema se puede descomponer en 3 tipos de componentes principales:
+El sistema está formado por 3 tipos de componentes principales:
 
 \begin{itemize}
-	\item \textbf{Nodos:} principales componentes del sistema, encargados de la conexión, la ejecución de tareas y la interacción con el usuario. Forman en conjunto un cluster.
+	\item \textbf{Nodos:} principales componentes del sistema, encargados de la conexión, la ejecución de tareas y la interacción con el usuario. Forman en conjunto un clúster.
 	\item \textbf{Tareas:} elementos que se sirven de entrada y salida al sistema.
 	\item \textbf{Mensajes:} componente completamente interno, encargados de contener la información transmitida entre los nodos.
 \end{itemize}
@@ -128,76 +142,228 @@ El sistema se puede descomponer en 3 tipos de componentes principales:
 Estos 3 tipos de componentes definen el sistema. Como soporte a ellos, también se definen
 
 \begin{itemize}
-	\item \textbf{Políticas:} empaquetadas en elementos del sistema sirven para determinar comportamientos de programación (scheduling) y de robos.
-	\item \textbf{Eventos:} notifaciones de los nodos.
+	\item \textbf{Políticas:} empaquetadas en elementos del sistema, sirven para determinar comportamientos de programación (scheduling) y de robos.
+	\item \textbf{Eventos:} notificaciones de los nodos.
 \end{itemize}
 
 A continuación, se detallarán los elementos principales del sistema y sus funciones.
 
-\subsubsection*{Nodos}
+\subsection*{Nodos}
 \label{sec:nodos}
 
-%TODO Diagrama de componentes
+Como se puede observar en la figura \ref{fig:deployEjemplo}, los nodos son los elementos con mayores responsabilidades ya que deben establecer comunicaciones con sus pares, seguir el estado del clúster e insertar y/o ejecutar tareas. 
 
-Como se puede observar en \ref{fig:componentes}, los nodos son los elementos con mayores responsabilidades ya que deben establecer comunicaciones con otros nodos, seguir el estado del cluster y insertar y/o ejecutar tareas. Los nodos pueden corresponderse uno a uno con máquinas en un cluster, pero es necesario destacar que pueden existir y convivir más de un nodo por terminal, siendo así el caso en el que se desee procesar, insertar y/o monitorear tareas, teniendo un tipo de nodo distinto por propósito.
+\begin{figure}
+% Ejemplo de deploy
+\includegraphics[width=1\textwidth]{deployEjemplo}
+\caption{\textit{Ejemplo de deployment del sistema. Una misma computadora puede contener varios nodos, la comunicación entre nodos se realiza mediante mensajes utilizando el clúster provisto por JGroups.}}
+\label{fig:deployEjemplo}
+\end{figure}
 
-El sistema define 4 tipos de nodos, mostrados en \ref{fig:interfacesNodos}, los cuales están implementadas a través de la jerarquía de clases mostrada en \ref{fig:clasesNodos}. La funcionalidad principal de cada tipo de nodo es:
+Los nodos pueden corresponderse uno a uno con máquinas en un clúster, pero es necesario destacar que pueden existir y convivir más de un nodo por terminal, siendo así el caso en el que se desee procesar, insertar y/o monitorear tareas, teniendo un tipo de nodo distinto por propósito.
+
+\begin{figure}
+% Imagen de la jerarquía de interfaces de nodos fig:interfacesNodos
+\includegraphics[width=1\textwidth]{clasesInterfaces}
+\caption{\textit{Jerarquía de interfaces de Nodos}}
+\label{fig:interfacesNodos}
+\end{figure}
+
+
+\begin{figure}
+%Imagen de la jerarquía de clases de nodos fig:clasesNodos
+\includegraphics[width=1\textwidth]{clasesNodos}
+\caption{\textit{Jerarquía de clases de Nodos. Se muestran solo métodos públicos, ignorando \textit{getters} y \textit{setters}.}}
+\label{fig:clasesNodos}
+\end{figure}
+
+
+
+El sistema define 4 tipos de nodos, mostrados en la figura \ref{fig:interfacesNodos}, los cuales están implementados a través de la jerarquía de clases mostrada en la figura \ref{fig:clasesNodos}. Las principales responsabilidades de cada tipo de nodo son:
 
 \begin{itemize}
-	\item \textbf{Master:} Encargado de insertar tareas al cluster, este tipo de nodo devuelve resultados mediante la interfaz \textit{Future}, siendo así necesaria su conexión con el cluster siempre que queden tareas pendientes.
-	\item \textbf{Slave:} consumidor de las tareas. Una vez conectado al cluster, es capaz de buscar y ejecutar tareas. Las distintas clases implementadas proponen distintas políticas de robo, las cuales serán detalladas más adelante.
-	\item \textbf{Monitor:} interfaz no implementada en su totalidad, pero diseñada para el acceso a la información detallada sobre el cluster. Esta entidad provee una interfaz para obtener datos sobre las tareas y los nodos conectados.
+	\item \textbf{Master:} Encargado de insertar tareas al clúster, este tipo de nodo devuelve resultados mediante la interfaz \textit{Future}, siendo así necesaria su existencia siempre que queden tareas pendientes.
+	\item \textbf{Slave:} consumidor de las tareas. Una vez conectado al clúster, es capaz de buscar y ejecutar tareas. Las distintas clases implementadas proponen distintas políticas de robo, las cuales serán detalladas más adelante.
+	\item \textbf{Monitor:} interfaz no implementada en su totalidad, pero diseñada para el acceso a la información detallada sobre el clúster. Esta entidad provee la posibilidad de obtener datos detallados sobre las tareas y los nodos conectados.
 \end{itemize}
 
+La jerarquía completa de clases y interfaces de nodos se puede observar en la figura \ref{fig:jerarquiaNodos}.
 
-Todos los nodos poseen un estado global del cluster, el cual incluye la lista de todos los nodos y su información, a través de la interfaz \textit{NodeInformation}; y los datos básicos pertenecientes a todas las tareas que están trabajando, pendientes o finalizadas a través de la clase \textit{TaskEntry}.
+\begin{figure}
+\centering
+%Imagen de la jerarquía total de nodos fig:jerarquiaNodos
+\includegraphics[height=0.4\textheight]{jerarquiaNodos}
+\caption{\textit{Jerarquía de clases e interfaces de Nodos. Se ignoran elementos externos al sistema}}
+\label{fig:jerarquiaNodos}
+\end{figure}
 
-% Imagen de la jerarquía de interfaces de nodos fig:interfacesNodos
-\label{fig:interfacesNodos}
-%Imagen de la jerarquía de clases de nodos fig:clasesNodos
-\label{fig:clasesNodos}
 
-\subsubsection*{Tareas}
+Todos los nodos poseen un estado global del clúster, el cual incluye la lista de todos los nodos y su información, a través de la interfaz \textit{NodeInformation}; y los datos básicos pertenecientes a todas las tareas que están trabajando, pendientes o finalizadas a través de la clase \textit{TaskEntry}.
 
-Las tareas están provistas como una interfaz contenedora llamada \textit{Task}, cuya ejecución estará a cargo del método \textit{call()}. Estas devolverán un resultado que se podrá acceder a través del \textit{Future} generado por el \textit{Master}. Cualquier tipo de excepción o error será notificado a través del mismo medio.
 
+
+
+\subsection*{Tareas}
+
+Las tareas están provistas como una interfaz contenedora llamada \textit{Task}, cuya ejecución será a través del método \textit{call()}. Estas devolverán un resultado que se podrá acceder a través del \textit{Future} generado por el \textit{Master}. Cualquier tipo de excepción o error será notificado a través del mismo medio.
+
+
+\begin{figure}
+\centering
 % Diagrama de secuencia
+\includegraphics[width=1\textwidth]{secuenciaSubmit}
+\caption{\textit{Diagrama de secuencia mostrando el funcionamiento normal del clúster}}
+\label{fig:secuenciaSubmit}
+\end{figure}
 
-Como se puede observar en \ref{img:secuenciaTarea}, una vez que se le solicita una tarea al \textit{Master}, este solo notificará a todo el cluster sobre la novedad, pero no enviará la tarea en sí hasta no recibir una solicitud de ejecución de un \textit{Slave}. Una vez enviada la tarea al nodo responsable, solo quedará ejecutarla y devolver el resultado o excepción. Estos estados por los que pasa cada tarea se puede observar en \ref{img:estadosTarea}.
+Como se puede observar en la figura \ref{fig:secuenciaSubmit}, una vez que se le solicita una tarea al \textit{Master}, este solo notificará a todo el clúster sobre la novedad, pero no enviará la tarea en sí hasta no recibir una solicitud de ejecución de un \textit{Slave}. Una vez enviada la tarea al nodo responsable, solo quedará ejecutarla y devolver el resultado o excepción. 
 
+La información que poseen todos los nodos sobre cada tarea está encapsulada dentro de \textit{TaskEntry}, la cual contiene el estado actual de la tarea, el identificador único, el dueño y el actual \textit{Handler}. Estos estados por los que pasa cada tarea se puede observar en la figura \ref{fig:estadosTarea}.
+
+
+\begin{figure}
 % Estados de una tarea
+\includegraphics[width=1\textwidth]{estadosTarea}
+\caption{\textit{Posibles estados de una tarea}}
+\label{fig:estadosTarea}
+\end{figure}
 
 Las tareas serán ejecutadas en un nodo, el cual será determinado inicialmente por las políticas de scheduling del \textit{Master}, con posibles variaciones debido a los robos. Estas características deberán ser establecidas y desarrolladas por el programador que desee utilizar el sistema.
 
 Cabe destacar que también se ha implementado una subclase especial de tarea, la cual permite que la misma se pause ante necesidades especiales del \textit{Slave}. De todas formas, hasta el momento el sistema no aprovecha esta característica.
 
-\subsubsection*{Mensajes}
+\subsection*{Mensajes}
 
-Internos al sistema y completamente transparente, los datos enviados a través del cluster son realizados a través del paquete de clases de \textit{Message}. Existen distintos tipos de mensajes, los cuales se muestran en \ref{img:mensajes}.
+Internos al sistema y completamente transparente para el usuario, los datos enviados a través del clúster son realizados a través del paquete de clases de \textit{Message}.
 
-\subsubsection*{Políticas}
+JGroups otorga una comunicación confiable y multicast, por lo que no se tuvo que trabajar sobre los envíos de mensajes en sí, dejando solo las preocupaciones en los datos enviados.
 
-Tanto el scheduling inicial del \textit{Master} como la elección de víctimas del \textit{Slave} que roba necesitará una política determinada. Mediante el patrón de diseño \textbf{Strategy}, las políticas podrán ser definidas por el programador y cambiadas en tiempo de ejecución. Los tipos de política son:
+
+\subsection*{Políticas}
+
+Tanto el scheduling inicial del \textit{Master} como la elección de víctimas del \textit{Slave} que roba necesitarán una política determinada. Mediante el patrón de diseño \textbf{Strategy}, las políticas podrán ser definidas por el programador y cambiadas en tiempo de ejecución. Los tipos de política son:
 
 \begin{itemize}
-	\item \textbf{SchedulingStrategy:} Utilizado por el \textit{Master} y ejecutado cada vez que se inserte una nueva tarea al cluster, el algoritmo de scheduling deberá determinar un nodo que ejecute la nueva tarea en base a información sobre estos.
+	\item \textbf{SchedulingStrategy:} Utilizado por el \textit{Master} y ejecutado cada vez que se inserte una nueva tarea al clúster, el algoritmo de scheduling deberá determinar un nodo que ejecute la nueva tarea en base a información sobre estos.
 	\item \textbf{StealingStrategy:} cuando un \textit{Slave} termina sus tareas, puede aplicar un algoritmo para seleccionar una tarea o nodo como víctima. La información utilizada por estas políticas será información sobre nodos o tareas. 
 Se debe aclarar que si no se define políticas de robo, el \textit{Slave} nunca robará, convirtiéndose así en un consumidor reactivo.
 \end{itemize}
 
-La forma de utilizar las políticas será detallada en la sección \ref{sec:util}
+La forma de utilizar las políticas será detallada en la sección \textit{Utilización y Aplicaciones}. \ref{sec:util}
 
-\subsubsection*{Eventos}
+\subsubsection*{Robo de Nodos}
 
-Los nodos informarán cambios en los estados de las tareas y del cluster en general a través de la interfaz \textit{Eventable}, la cual podrá ser utilizada si se requiere adquirir información detallada.
+La clase \textit{NodeStealSlaveNode} aplicará la política de robos a nivel de nodos. Cuando se quede sin tareas por procesar, el \textit{Slave} elegirá una víctima de la lista de nodos, y le enviará una solicitud de robo junto a un número de tareas deseadas (el cual es igual a la cantidad máxima de tareas que se pueden ejecutar en simultáneo por éste). Cuando un \textit{Slave} recibe una solicitud de robo, analizará sus tareas pendientes y directamente cambiará el \textit{Handler} de las tareas, notificando de ésto a todo el clúster. Esta situación se puede observar en la figura \ref{fig:secuenciaNodeSteal}.
+
+\begin{figure}
+\centering
+% Estados de una tarea
+\includegraphics[height=0.45\textheight]{secNodeSteal}
+\caption{\textit{Diagrama de secuencia mostrando el robo a nivel nodo.}}
+\label{fig:secuenciaNodeSteal}
+\end{figure}
 
 
-\subsection*{Utilización y aplicaciones}
+\subsubsection*{Robo de Tareas}
+
+El robo de tareas ocurrirá bajo la misma situación que el robo de nodos: cuando en este caso el \textit{TaskStealSlaveNode} se quede sin tareas por procesar. A diferencia con el robo de nodos, el nodo seleccionará una tarea víctima a través del algoritmo dentro de \textit{TaskStealingStrategy} y la robará sin solicitud, cambiando el \textit{Handler} por él mismo y notificándoselo al clúster. El funcionamiento de robo de tareas está en la figura \ref{fig:secuenciaTaskSteal}
+
+
+\begin{figure}
+\centering
+%diagrama secuencia robo de tareas
+\includegraphics[height=0.45\textheight]{secuenciaTaskSteal}
+\caption{\textit{Diagrama de secuencia mostrando el robo a nivel tarea.}}
+\label{fig:secuenciaTaskSteal}
+\end{figure}
+
+
+\subsection*{Eventos}
+
+Los nodos informarán cambios en los estados de las tareas y del clúster en general a través de la interfaz \textit{Eventable}, la cual podrá ser utilizada si se requiere adquirir información detallada.
+
+
+\section*{Utilización y aplicaciones}
 \label{sec:util}
 
-Para poder utilizar este sistema se deberá tener en cuenta ciertos aspectos, los cuales permitirán el desarrollo de un sistema grid personalizable en cuanto a topología, comunicación y scheduling y robo de tareas.
+Para poder utilizar este sistema se deberá tener en cuenta ciertos aspectos, los cuales permitirán el desarrollo de un grid personalizable en cuanto a topología, comunicación, tipo de tareas, scheduling y robo de tareas.
+
+\subsection*{Topología}
+
+Como ya se explicó, el clúster podrá ser dinámico y ya incluye un soporte ante eventuales desconexiones. Mediante los métodos \textit{connect(cluster)} y \textit{disconnect()} de la interfaz \textit{Node}, el sistema manejará todas las responsabilidades ligadas con la conexión; y las caídas de los nodos de la red serán notificada a través de la interfaz \textit{Eventable}.
+
+\subsection*{Comunicación}
+
+JGroups\cite{url:JGroups} otorga la posibilidad de configurar la pila de protocolos de comunicación a necesidad del usuario. El sistema actualmente utiliza los  valores por default, para cambiarlos leer la documentación dentro de la página web de JGroups.
+
+\subsection*{Tipos de tareas}
+
+Las tareas dentro del grid se manejan a través de una interfaz sencilla llamada \textit{Task}, por lo que cualquier sistema que se implemente deberá utilizar esta interfaz para poder ingresar exitosamente dentro del clúster las tareas, dejándole así total libertad al programador sobre el tipo de tarea a implementar.
+
+Al ser transmitida a través del clúster, \textit{Task} hereda de la interfaz \textit{Serializable}, por lo que la clase implementada deberá contener elementos serializables.
+
+\subsection*{Scheduling}
+
+El \textit{Master} se encargará de asignar un \textit{Handler} a las tareas cada vez que se inserte una, o que haya una caída de un nodo \textit{Slave}. El algoritmo de selección se realizará a través de la interfaz \textit{SchedulingStrategy}, por lo que el programador deberá implementar una clase de scheduling.
+
+Se deberá tener en cuenta que la lista pasada por parámetro \textbf{NO} se deberá editar, y que la lista de nodos contiene a \textbf{todos} los nodos del clúster, mientras que el retorno deberá ser de un nodo \textit{Slave}; de no respetarse esto, las tareas nunca se ejecutarán.
+
+\subsection*{Robo de tareas}
+
+Como ya se detalló en la sección \textit{Descripción del Sistema}, existen dos tipos de \textit{Slave} con estrategias distintas en cuanto a la forma de robo.
+
+\begin{itemize}
+	\item \textbf{Robo a nivel Nodo:} utiliza el algoritmo dentro de \textit{NodeStealingStrategy} para seleccionar una víctima y enviarle un pedido de robo. Al necesitar pedidos, este tipo de robo es completamente seguro y no presenta problemas con la sincronización.
+	\item \textbf{Robo a nivel Tarea:} utiliza \textit{TaskStealingStrategy} para seleccionar una tarea víctima y empezar la ejecución de la misma, notificando al clúster. A través de este método se pueden producir problemas de sincronización dentro del clúster, provocando cálculos innecesarios. Por ejemplo cuando dos nodos roban la misma tarea al mismo tiempo, provocará que la misma tarea se ejecute dos veces. Posibles soluciones se propondrán en la sección \textit{Tareas a realizar}.
+\end{itemize}
+
+Distintos tipos de \textit{Slaves} pueden convivir bajo el mismo clúster. Para utilizarlos, se deberá tener en cuenta que los datos pasados como parámetros de los \textit{Strategy} \textbf{NO} deberán ser alterados, y que las estructuras contienen información sobre \textbf{todos} los nodos o tareas del clúster. Los algoritmos deberán retornar un nodo \textit{Slave} para el caso de robo de nodos, y una tarea no finalizada para el caso de robo de tareas.
+
+En los códigos fuente se encuentran una política implementada para cada tipo: \textit{FirstNodeStealingStrategy}  y \textit{RandomStealingStrategy}.
+
+\section*{Historial de cambios}
+
+Esta sección explicará las grandes modificaciones realizadas a lo largo de la vida del proyecto junto a las debidas justificaciones, hasta llegar al sistema actual.
+
+El objetivo de esta sección es poder comprender el proceso realizado, logrando así un mayor entendimiento del estado actual.
+
+\subsubsection*{Una sola clase: \textit{Peer}}
+
+En un principio, el sistema se valió solamente de una clase implementada: \textit{Peer}, la cual contenía las responsabilidades de un \textit{Master-Slave} y recomendando el uso a través de las interfaces provistas. De esta forma se lograba que todos los nodos dentro del clúster puedan procesar tareas, y simplicaba el entendimiento del código fuente gracias a métodos comunes y extendidos. 
+
+Pero el crecimiento de la clase, y el agregado de funcionalidades específicas para cada tipo de nodo hizo que se necesitara rediseñar el sistema, llegando a la jerarquía de clases actual.
+
+\subsubsection*{Robos}
+
+Al iniciar el desarrollo, se decidió implementar solo el robo de tareas. Cuando se comenzó el testeo, se descubrió el problema ligado con la sincronización ya explicado, lo cual ocurría con frecuencia cuando la cantidad de tareas era pequeña y los \textit{Slaves} tenían la misma potencia de procesamiento.
+
+A partir de este problema, se decidió cambiar el tipo de robo a uno más seguro en cuanto a sincronización, desarrollando así el de nodos. De todas formas se mantuvo el robo de tareas dentro del sistema para otorgar mayor flexibilidad al programador.
+
+Los cambios realizados en el tipo de robos llevó a la necesidad de implementar un sistema de información sobre nodos más detallado que el brindado por JGroups. De allí surgió la clase \textit{NodeInformation}.
+
+\subsubsection*{Consumidor reactivo a consumidor activo}
+
+Dentro de la clase \textit{Slave}, la búsqueda de tareas se implementó en un principio de forma reactiva: cada vez que el estado de tareas se cambiaba se iniciaba la ejecución de búsqueda de tareas. Este método podía resultar pesado para la creación de hilos cuando el estado de tareas cambiaba continuamente, y podía derivar en problemas de sincronización, por lo que se decidió cambiar a un consumidor que continuamente chequee ante posibles nuevas tareas. 
+
+De esta forma, se evitó el bloqueo de las llamadas asincrónicas generadas por JGroups, lo cual podía terminar en el bloqueo de todo el clúster. También se solucionaron posibles problemas de sincronización y se logró que el nodo esté obligado a robar cada un tiempo determinado.
+
+\section*{Tareas a realizar}
+
+Como todo proyecto, el proceso aún se encuentra inconcluso. En esta sección se nombrarán los próximos pasos a realizar para seguir en la optimización del sistema.
+
+\begin{itemize}
+	\item \textbf{Utilización de \textit{NodeInformation}:} actualmente la información de nodos no se actualiza de forma automática, sino que solo se realiza ante un pedido forzado por parte de un nodo o del usuario. Se puede mejorar este aspecto brindando una actualización regularmente, y aprovechando este componente para adquirir datos estadísticos y detallados sobre los nodos.
+	\item \textbf{Parámetros sobre políticas de robo y scheduling:} por el momento, los nodos delegan las responsabilidades de selección a las estrategias, pero lo realizan brindándoles información sensible y completa sobre el clúster. Se deberá limitar los datos brindados.
+	\item \textbf{Evitar problemas de sincronización en robos:} se deberá buscar una solución ante posibles problemas en los robos de tareas. Por el momento, alternativas analizadas como utilización de \textit{timestamp} en los mensajes o control centralizado de las tareas son difíciles de controlar.
+\end{itemize}
 
 
-\subsection*{Historial de cambios}%
+\section*{Conclusión y discusión}
+
+La realización de este trabajo me ha sido de gran utilidad para la comprensión del funcionamiento de sistemas distribuidos y las políticas de robos. Aunque es un trabajo que requerirá continuas mejoras, espero que este sistema sea de utilidad para futuras investigaciones o aplicaciones.
+
+
+\bibliography{mybib}
+
 
 \end{document}
