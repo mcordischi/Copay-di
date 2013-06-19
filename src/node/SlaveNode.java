@@ -158,13 +158,11 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 	 * @throws Exception 
 	 */
 	protected void handleTask(TaskID id, Task task){
-		e.eventWarning("I RECEIVED " + id.toString());
 		TaskEntry entry = null;
 		synchronized(pendingTasks){
 			for (TaskEntry i : pendingTasks){
 				if (i.getId().equals(id)){
 					entry = i;
-					e.eventWarning("I RECEIVED " + i.toString());
 					break;
 				}
 			}
@@ -172,7 +170,6 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 		if (entry != null){
 			synchronized(pendingTasks){
 				pendingTasks.remove(entry);
-				e.eventWarning("I am removing " + entry.toString());
 			}
 			
 			e.eventTaskExecution(entry);
@@ -262,7 +259,7 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 			}
 			str += "\n\t" + t.getId().toString();
 		}
-		e.eventWarning("Steal detail:" + str);
+//		e.eventWarning("Steal detail:" + str);
 	}
 	
 	

@@ -1,6 +1,7 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.Future;
 
@@ -25,12 +26,15 @@ public class Main {
 	public static int masterID = 0;
 	public static int slaveID = 0;
 	
+	
+	
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
 		
+		Random random = new Random();
 	
 		SchedulerStrategy schStrat = new RandomSchedulerStrategy();
 		NodeStealingStrategy stlStrat = new FirstNodeStealingStrategy();
@@ -79,7 +83,11 @@ public class Main {
 	        case "s": //add slave
 	        	Eventable diSlave = new DebugInterface("SLV" + slaveID);
 	        	slaveID++;
-	        	Slave slave = new NodeStealSlaveNode(diSlave,null,5);
+	        	int threadPoolSize =
+	        			random.nextInt(10) +1;
+	        	System.out.println("Creating a node with a pool of " +  threadPoolSize + " Threads." +
+	        			"");
+	        	Slave slave = new NodeStealSlaveNode(diSlave,stlStrat,threadPoolSize);
 	    		slave.connect("network");
 	            slave.setLocalState(true);
 	            slaves.add(slave);
@@ -163,8 +171,9 @@ public class Main {
 	        }
 		}
         
+		
        System.out.println("Goodbye!");
-       System.runFinalization();
+       System.exit(0);
        
 	}
 
