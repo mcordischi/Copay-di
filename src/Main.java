@@ -40,7 +40,7 @@ public class Main {
 
 		System.out.println("THIS IS A SAMPLE PROGRAM \n"
 						+ "Its only purpose is to show the basic functionalities. \n" 
-						+ "You can get the source code in http://github.com/tinchofm/Copay-di"
+						+ "You can get the source code in http://github.com/tinchofm/Copay-di\n"
 						+"You must press enter to display the menu. Press enter to get started..")
 						;
 		
@@ -164,7 +164,8 @@ public class Main {
 		}
         
        System.out.println("Goodbye!");
-        
+       System.runFinalization();
+       
 	}
 
 }
