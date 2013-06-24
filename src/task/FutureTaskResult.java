@@ -50,6 +50,7 @@ public class FutureTaskResult<V> implements Future<V> {
 		if (done)
 			return result;
 		available.acquire();
+		available.release();
 		return result;
 	}
 
@@ -57,6 +58,7 @@ public class FutureTaskResult<V> implements Future<V> {
 	public V get(long arg0, TimeUnit arg1) throws InterruptedException,
 			ExecutionException, TimeoutException {
 		available.acquire();
+		available.release();
 		return result;
 	}
 

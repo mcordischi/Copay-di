@@ -138,17 +138,33 @@ public class MasterNode extends TasksNode implements Master {
 	
 	@Override
 	public void receive(Message msg) {
-		TaskMessage tmsg = (TaskMessage) msg.getObject();
+		final Message msgFinal = msg ;
+		final TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case TASK_RESULT :
+			new Runnable() {
+				@Override
+				public void run() {
 				handleTaskResult(((TaskResultMessage)tmsg));
+				}
+			}.run();
 			break;
 		case TASK_REQUEST :
-			TaskID id = ((TaskRequestMessage)tmsg).getId();
-			taskResponse(id,msg.getSrc());
+			new Runnable() {
+				@Override
+				public void run() {
+					TaskID id = ((TaskRequestMessage)tmsg).getId();
+					taskResponse(id,msgFinal.getSrc());
+				}
+			}.run();
 			break;
 		case TASK_ERROR :
-			handleTaskError((TaskErrorMessage)tmsg);
+			new Runnable() {
+				@Override
+				public void run() {
+					handleTaskError((TaskErrorMessage)tmsg);
+				}
+			}.run();
 			break;
 		default:
 			super.receive(msg);

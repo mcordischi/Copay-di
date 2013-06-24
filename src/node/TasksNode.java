@@ -25,6 +25,7 @@ import org.jgroups.util.Util;
 import event.Eventable;
 import event.NullEventInterface;
 import task.*;
+import task.TaskEntry.StateType;
 
 
 /**
@@ -115,13 +116,24 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	
 	@Override
 	public void receive(Message msg){
-		TaskMessage tmsg = (TaskMessage) msg.getObject();
+		final Message msgFinal = msg;
+		final TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case ADD_TASK:
-			handleAddTask(((TaskNotificationMessage)tmsg).getEntry());
+			new Runnable() {
+				@Override
+				public void run() {
+					handleAddTask(((TaskNotificationMessage)tmsg).getEntry());
+				}
+			}.run();
 			break;
 		case REMOVE_TASK :
-			handleRemoveTask(((TaskNotificationMessage)tmsg).getEntry());
+			new Runnable() {
+				@Override
+				public void run() {
+					handleRemoveTask(((TaskNotificationMessage)tmsg).getEntry());
+				}
+			}.run();
 			break;
 		case GLOBAL_START :
 			setGlobalState(WORKING);
@@ -130,14 +142,29 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			setGlobalState(PAUSE);
 			break;
 		case TASK_STATE :
-			if (!msg.getSrc().equals(channel.getAddress()))
-				handleTaskUpdate(((TaskNotificationMessage)tmsg).getEntry());
+			new Runnable() {
+				@Override
+				public void run() {
+					if (!msgFinal.getSrc().equals(channel.getAddress()))
+						handleTaskUpdate(((TaskNotificationMessage)tmsg).getEntry());
+				}
+			}.run();
 			break;
 		case NODE_INFORMATION:
+			new Runnable() {
+				@Override
+				public void run() {
 			updateNodeInformation((NodeInfoMessage)tmsg);
+				}
+			}.run();
 			break;
 		case INFORMATION_REQUEST:
-			sendInformation();
+			new Runnable() {
+				@Override
+				public void run() {
+					sendInformation();
+				}
+			}.run();
 			break;
 		default:
 			break;
@@ -314,15 +341,17 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	 * @param address
 	 */
 	protected void editTasks(Address address){
-		e.eventWarning("Editing tasks from " + address.toString());
-		synchronized(tasksIndex){
-			for(TaskEntry te : tasksIndex){
-				if (te.getOwner().equals(address)){
-					tasksIndex.remove(te);
-				}
-				if (te.getHandler().equals(address)){
-					te.setHandler(null);
-					te.setState(TaskEntry.StateType.SUBMITTED);
+		if (address != null){
+			e.eventWarning("Editing tasks from " + address.toString());
+			synchronized(tasksIndex){
+				for(TaskEntry te : tasksIndex){
+					if (te.getOwner().equals(address)){
+						tasksIndex.remove(te);
+					}
+					if (te.getHandler().equals(address)  && te.getState() != StateType.FINISHED){
+						te.setHandler(null);
+						te.setState(TaskEntry.StateType.SUBMITTED);
+					}
 				}
 			}
 		}

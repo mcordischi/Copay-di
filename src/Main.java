@@ -85,8 +85,7 @@ public class Main {
 	        	slaveID++;
 	        	int threadPoolSize =
 	        			random.nextInt(10) +1;
-	        	System.out.println("Creating a node with a pool of " +  threadPoolSize + " Threads." +
-	        			"");
+	        	System.out.println("Creating a node with a pool of " +  threadPoolSize + " Threads.");
 	        	Slave slave = new NodeStealSlaveNode(diSlave,stlStrat,threadPoolSize);
 	    		slave.connect("network");
 	            slave.setLocalState(true);

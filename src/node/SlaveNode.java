@@ -135,18 +135,29 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 
 	@Override
 	public void receive(Message msg) {
-		TaskMessage tmsg = (TaskMessage) msg.getObject();
+		final Message msgFinal = msg;
+		final TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case TASK_RESPONSE:
-			TaskID tId = ((TaskResponseMessage)tmsg).getId();
-			Task task = ((TaskResponseMessage)tmsg).getTask() ;
-			if (task == null)
-				e.eventError("Null task received");
-			else
-				handleTask(tId, task);
+			new Runnable() {
+				@Override
+				public void run() {
+					TaskID tId = ((TaskResponseMessage)tmsg).getId();
+					Task task = ((TaskResponseMessage)tmsg).getTask() ;
+					if (task == null)
+						e.eventError("Null task received");
+					else
+						handleTask(tId, task);
+				}
+			}.run();
 			break;
 		case NODE_STEAL_REQUEST:
-			handleNodeStealRequest((NodeStealRequestMessage)tmsg, msg.getSrc());
+			new Runnable() {
+				@Override
+				public void run() {
+					handleNodeStealRequest((NodeStealRequestMessage)tmsg, msgFinal.getSrc());
+				}
+			}.run();
 		default:
 			super.receive(msg);
 		}
@@ -235,6 +246,11 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 	 * @param src
 	 */
 	protected void handleNodeStealRequest(NodeStealRequestMessage m, Address stealer){
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e2) {
+			e.eventWarning("Something went wrong when handling the node steal request");
+		}
 		ArrayList<TaskEntry> array = new ArrayList<TaskEntry>();
 		int qty = m.getTasksRequested();
 		synchronized(tasksIndex){
