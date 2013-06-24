@@ -105,8 +105,9 @@ public class NodeStealSlaveNode extends SlaveNode {
 		TaskEntry result = null;
 		synchronized(tasksIndex){
 			for (TaskEntry entry : tasksIndex){
-				if (entry.getHandler().equals(localAddress) && entry.getState().equals(TaskEntry.StateType.SUBMITTED))
-					result = entry;
+				if (entry.getHandler() != null)
+					if (entry.getHandler().equals(localAddress) && entry.getState().equals(TaskEntry.StateType.SUBMITTED))
+						result = entry;
 			}
 		}
 		return result ;

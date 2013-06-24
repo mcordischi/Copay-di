@@ -258,7 +258,7 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 				synchronized(t){
 				if (array.size() == qty)
 					break;
-					else if (t.getHandler().equals(info.getAddress()) && 
+					else if (t.getHandler() != null && t.getHandler().equals(info.getAddress()) && 
 							(t.getState() == StateType.SUBMITTED || t.getState() == StateType.UNDEFINED  )){
 						array.add(new TaskEntry(t.getId(),stealer));	
 						t.setHandler(stealer);
@@ -339,7 +339,7 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 						workingTasks.remove(te);
 					}
 				}
-				if (te.getHandler().equals(address)){
+				if (te.getHandler() != null && te.getHandler().equals(address)){
 					te.setHandler(null);
 					te.setState(TaskEntry.StateType.SUBMITTED);
 				}

@@ -114,7 +114,9 @@ public class MasterNode extends TasksNode implements Master {
 	 * Assigns a handler to ALL the tasks that the node owns.
 	 */
 	private void scheduleTasks(){
-		scheduleTasks(tasksIndex);
+		synchronized(tasksIndex){
+			scheduleTasks(tasksIndex);
+		}
 	}
 
 	/**
@@ -123,17 +125,21 @@ public class MasterNode extends TasksNode implements Master {
 	 * @param tasks : A vector of the tasks to schedule
 	 */
 	private void scheduleTasks(Vector<TaskEntry> tasks){
-		synchronized(nodesInfo){
-			schStrat.assign(tasks,nodesInfo);
+		synchronized(tasks){
+			synchronized(nodesInfo){
+				schStrat.assign(tasks,nodesInfo);
+			}
 		}
-		
 		//Notify the cluster that the tasks changed
-		try {
-			for (TaskEntry entry :tasks)
-			channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STATE,entry));
-				} catch (Exception e1) {
-					e.eventError("Submit Failed. Are you connected to the cluster?");
-				}
+		synchronized(tasks){
+			try {
+				for (TaskEntry entry :tasks)
+					if (entry.getOwner().equals(info.getAddress()))
+						channel.send(null, new TaskNotificationMessage(TaskMessage.MessageType.TASK_STATE,entry));
+					} catch (Exception e1) {
+						e.eventError("Submit Failed. Are you connected to the cluster?");
+					}
+		}
 	}
 	
 	@Override
