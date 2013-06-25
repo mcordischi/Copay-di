@@ -104,11 +104,17 @@ public class NodeStealSlaveNode extends SlaveNode {
 		Address localAddress = channel.getAddress();
 		TaskEntry result = null;
 		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
+			}
 			for (TaskEntry entry : tasksIndex){
 				if (entry.getHandler() != null)
 					if (entry.getHandler().equals(localAddress) && entry.getState().equals(TaskEntry.StateType.SUBMITTED))
 						result = entry;
 			}
+			tasksIndexSem.release();
 		}
 		return result ;
 	}

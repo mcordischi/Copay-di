@@ -254,6 +254,11 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 		ArrayList<TaskEntry> array = new ArrayList<TaskEntry>();
 		int qty = m.getTasksRequested();
 		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
+			}
 			for (TaskEntry t : tasksIndex)
 				synchronized(t){
 				if (array.size() == qty)
@@ -264,6 +269,7 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 						t.setHandler(stealer);
 					}
 				}
+			tasksIndexSem.release();
 		}
 		e.eventNodeStealResponse(array.size() > 0, info.getAddress(), stealer);
 		String str = new String();
@@ -325,11 +331,18 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 	 * Override from TasksNode. Slave must also check the pendingTasks and Working tasks structures.
 	 */
 	@Override
-	protected void editTasks(Address address){
+	protected synchronized void editTasks(Address address){
 		synchronized(tasksIndex){
-			for(TaskEntry te : tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
+			}
+			for(int i=0 ; i<tasksIndex.size(); i++){
+				TaskEntry te = tasksIndex.get(i);
 				if (te.getOwner().equals(address)){
 					tasksIndex.remove(te);
+					i--;
 					synchronized(pendingTasks){
 						pendingTasks.remove(te);
 					}
@@ -339,11 +352,12 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 						workingTasks.remove(te);
 					}
 				}
-				if (te.getHandler() != null && te.getHandler().equals(address)){
+				else if (te.getHandler() != null && te.getHandler().equals(address)){
 					te.setHandler(null);
 					te.setState(TaskEntry.StateType.SUBMITTED);
 				}
 			}
+			tasksIndexSem.release();
 		}
 	}
 	

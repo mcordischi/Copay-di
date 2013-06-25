@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 
 import message.NodeInfoMessage;
 import message.TaskMessage;
@@ -45,7 +46,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	protected Eventable e;
 
 	protected Vector<TaskEntry> tasksIndex = new Vector<TaskEntry>();
-
+	protected final Semaphore tasksIndexSem = new Semaphore(1);
 	
 	protected Vector<NodeInformation> nodesInfo = new Vector<NodeInformation>();
 	protected NodeInformation info;
@@ -154,7 +155,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			new Runnable() {
 				@Override
 				public void run() {
-			updateNodeInformation((NodeInfoMessage)tmsg);
+					updateNodeInformation((NodeInfoMessage)tmsg);
 				}
 			}.run();
 			break;
@@ -183,11 +184,17 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 		TaskEntry oldEntry = null;
 		
 		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
+			}
 			for(TaskEntry e : tasksIndex)
 				if (e.equals(entry)){
 					oldEntry = e;
 					break;
 				}
+			tasksIndexSem.release();
 		}
 		if (oldEntry == null)
 			//The ADD_TASK message hasn't been received yet
@@ -208,14 +215,20 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	 * @param entry
 	 */
 	protected void handleAddTask(TaskEntry entry){
-		boolean exists = tasksIndex.contains(entry);
-		if (!exists){
-			synchronized(tasksIndex){
-			tasksIndex.add(entry);
+		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
 			}
+			boolean exists = tasksIndex.contains(entry);
+			if (!exists){
+				tasksIndex.add(entry);
+			}
+			tasksIndexSem.release();
+		}
 			this.setFinished(false);
 			e.eventNewTask(entry);
-		}
 		if (entry.getHandler().equals(info.getAddress()) || entry.getOwner().equals(info.getAddress()))
 			finished = false;
 	}
@@ -225,7 +238,13 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	 */
 	protected void handleRemoveTask(TaskEntry entry){
 		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
+			}
 			tasksIndex.remove(entry);
+			tasksIndexSem.release();
 		}
 		e.eventRemoveTask(entry.getId());
 	}
@@ -262,19 +281,27 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 		}
 	}
 
-	/**
-	 * WARNING, NOT syncrhonized structures.
-	 */
+
 	@Override
 	public void getState(OutputStream output) throws Exception {
 		DataOutputStream out = new DataOutputStream(output);
-		Util.objectToStream(tasksIndex, out);
-		Util.objectToStream(nodesInfo, out);
+		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
+			}
+			Util.objectToStream(tasksIndex, out);
+			tasksIndexSem.release();
+		}
+		synchronized(nodesInfo){
+			Util.objectToStream(nodesInfo, out);
+		}
 		Util.objectToStream(globalState, out);
 	}
 	
 	/**
-	 * WARNING, NOT syncrhonized structures.
+	 * 
 	 */
 	@Override
 	public void setState(InputStream input) throws Exception {
@@ -287,7 +314,13 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	
 	private void updateState(Vector<TaskEntry> inEntry, Vector<NodeInformation> inInfo){
 		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
+			}
 			tasksIndex.addAll(inEntry);
+			tasksIndexSem.release();
 		}
 		synchronized(nodesInfo){
 			nodesInfo.addAll(inInfo);
@@ -347,15 +380,23 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 		if (address != null){
 			e.eventWarning("Editing tasks from " + address.toString());
 			synchronized(tasksIndex){
-				for(TaskEntry te : tasksIndex){
+				try {
+					tasksIndexSem.acquire();
+				} catch (InterruptedException e1) {
+					e.eventError("Internal Erorr - Semaphores");
+				}
+				for(int i=0 ; i<tasksIndex.size(); i++){
+					TaskEntry te = tasksIndex.get(i);
 					if (te.getOwner().equals(address)){
 						tasksIndex.remove(te);
+						i--;
 					}
-					if (te.getHandler().equals(address)  && te.getState() != StateType.FINISHED){
+					else if (te.getHandler() != null && te.getHandler().equals(address)  && te.getState() != StateType.FINISHED){
 						te.setHandler(null);
 						te.setState(TaskEntry.StateType.SUBMITTED);
 					}
 				}
+				tasksIndexSem.release();
 			}
 		}
 	}
@@ -404,13 +445,21 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	 */
 	protected synchronized Vector<TaskEntry> getTasks(Address owner,Address handler){
 		Vector<TaskEntry> result = new Vector<TaskEntry>();
-		for (TaskEntry e : tasksIndex)
-			// Add to the result if the owner is the same and if the handlers are null or the same
-			if (e.getOwner().equals(owner)) 
-				if (handler == null && e.getHandler() == null)
-					result.add(e);
-				else if (handler != null && e.getHandler() != null && e.getHandler().equals(handler))
-					result.add(e);
+		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
+			}
+			for (TaskEntry e : tasksIndex)
+				// Add to the result if the owner is the same and if the handlers are null or the same
+				if (e.getOwner().equals(owner)) 
+					if (handler == null && e.getHandler() == null)
+						result.add(e);
+					else if (handler != null && e.getHandler() != null && e.getHandler().equals(handler))
+						result.add(e);
+			tasksIndexSem.release();
+		}
 		return result;
 	}
 	
@@ -471,10 +520,16 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	}
 	
 	public void notifyTasksIndex(){
+		try {
+			tasksIndexSem.acquire();
+		} catch (InterruptedException e1) {
+			e.eventError("Internal Erorr - Semaphores");
+		}
 		if (tasksIndex.size() == 0)
 			e.eventWarning("The tasks Index is empty");
 		for (TaskEntry entry : tasksIndex)
 			e.notifyTask(entry);
+		tasksIndexSem.release();
 	}
 
 	@Override

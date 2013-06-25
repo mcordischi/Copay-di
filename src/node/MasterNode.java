@@ -74,7 +74,9 @@ public class MasterNode extends TasksNode implements Master {
 		tasksMap.put(id, t);
 		TaskEntry entry = new TaskEntry(id,null);
 		//Schedule the task
-		schStrat.assign(entry, nodesInfo);
+		synchronized(nodesInfo){
+			schStrat.assign(entry, nodesInfo);
+		}
 		
 		//Notify the cluster that a new task exists
 		try {
@@ -114,24 +116,26 @@ public class MasterNode extends TasksNode implements Master {
 	 * Assigns a handler to ALL the tasks that the node owns.
 	 */
 	private void scheduleTasks(){
-		synchronized(tasksIndex){
 			scheduleTasks(tasksIndex);
-		}
 	}
 
 	/**
 	 * Assigns a handler to the @tasks that the node owns.
 	 * Uses the Scheduler Strategy.
+	 * Blocks tasksIndex for a safe usage.
 	 * @param tasks : A vector of the tasks to schedule
 	 */
 	private void scheduleTasks(Vector<TaskEntry> tasks){
-		synchronized(tasks){
-			synchronized(nodesInfo){
-				schStrat.assign(tasks,nodesInfo);
+		synchronized(tasksIndex){
+			try {
+				tasksIndexSem.acquire();
+			} catch (InterruptedException e1) {
+				e.eventError("Internal Erorr - Semaphores");
 			}
-		}
+				synchronized(nodesInfo){
+					schStrat.assign(tasks,nodesInfo);
+				}
 		//Notify the cluster that the tasks changed
-		synchronized(tasks){
 			try {
 				for (TaskEntry entry :tasks)
 					if (entry.getOwner().equals(info.getAddress()))
@@ -139,7 +143,9 @@ public class MasterNode extends TasksNode implements Master {
 					} catch (Exception e1) {
 						e.eventError("Submit Failed. Are you connected to the cluster?");
 					}
+			tasksIndexSem.release();
 		}
+		
 	}
 	
 	@Override
