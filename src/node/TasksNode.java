@@ -198,8 +198,12 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			tasksIndexSem.release();
 		}
 		if (oldEntry == null)
+			;
 			//The ADD_TASK message hasn't been received yet
-			handleAddTask(entry);
+			//WARNING - This branch commented due to synchronization problems.
+			//After a Master crashes, some TASK_UPDATE messages may arrive, and they must be ignored. 
+			//This is the easiest way to solve this problem. 
+			//handleAddTask(entry);
 		else {
 			if (oldEntry.getState() != TaskEntry.StateType.FINISHED){
 				oldEntry.setState(entry.getState());
