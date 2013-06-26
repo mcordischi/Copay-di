@@ -64,7 +64,7 @@ public class NodeStealSlaveNode extends SlaveNode {
 					}
 					time *= 1.2;
 				}
-				e.eventWarning("Time to fetch");
+				//e.eventWarning("Time to fetch");
 			//Fetch & Request
 			TaskEntry entry = fetchTask();
 			if(entry != null){

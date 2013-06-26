@@ -130,7 +130,7 @@ public class MasterNode extends TasksNode implements Master {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal error - Semaphores");
 			}
 				synchronized(nodesInfo){
 					schStrat.assign(tasks,nodesInfo);
@@ -154,29 +154,29 @@ public class MasterNode extends TasksNode implements Master {
 		final TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case TASK_RESULT :
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 				handleTaskResult(((TaskResultMessage)tmsg));
 				}
-			}.run();
+			}.start();
 			break;
 		case TASK_REQUEST :
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					TaskID id = ((TaskRequestMessage)tmsg).getId();
 					taskResponse(id,msgFinal.getSrc());
 				}
-			}.run();
+			}.start();
 			break;
 		case TASK_ERROR :
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					handleTaskError((TaskErrorMessage)tmsg);
 				}
-			}.run();
+			}.start();
 			break;
 		default:
 			super.receive(msg);

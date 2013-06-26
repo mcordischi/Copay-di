@@ -121,20 +121,20 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 		final TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case ADD_TASK:
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					handleAddTask(((TaskNotificationMessage)tmsg).getEntry());
 				}
-			}.run();
+			}.start();
 			break;
 		case REMOVE_TASK :
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					handleRemoveTask(((TaskNotificationMessage)tmsg).getEntry());
 				}
-			}.run();
+			}.start();
 			break;
 		case GLOBAL_START :
 			setGlobalState(WORKING);
@@ -143,29 +143,29 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			setGlobalState(PAUSE);
 			break;
 		case TASK_STATE :
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					if (!msgFinal.getSrc().equals(channel.getAddress()))
 						handleTaskUpdate(((TaskNotificationMessage)tmsg).getEntry());
 				}
-			}.run();
+			}.start();
 			break;
 		case NODE_INFORMATION:
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					updateNodeInformation((NodeInfoMessage)tmsg);
 				}
-			}.run();
+			}.start();
 			break;
 		case INFORMATION_REQUEST:
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					sendInformation();
 				}
-			}.run();
+			}.start();
 			break;
 		default:
 			break;
@@ -187,7 +187,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal error - Semaphores");
 			}
 			for(TaskEntry e : tasksIndex)
 				if (e.equals(entry)){
@@ -219,7 +219,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal Error - Semaphores");
 			}
 			boolean exists = tasksIndex.contains(entry);
 			if (!exists){
@@ -241,7 +241,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal Error - Semaphores");
 			}
 			tasksIndex.remove(entry);
 			tasksIndexSem.release();
@@ -289,7 +289,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal error - Semaphores");
 			}
 			Util.objectToStream(tasksIndex, out);
 			tasksIndexSem.release();
@@ -317,7 +317,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal error - Semaphores");
 			}
 			tasksIndex.addAll(inEntry);
 			tasksIndexSem.release();
@@ -337,12 +337,12 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 					final Address missingNode = searchMissingNode(new_view,actualView);
 					if (missingNode != null)
 						//run handleNodeCrash in a new thread, it may get long
-						new Runnable() {
+						new Thread() {
 							@Override
 							public void run() {
 								handleNodeCrash(missingNode);
 							}
-						}.run();
+						}.start();
 					else
 						e.eventWarning("Unidentified crash");
 			}
@@ -383,7 +383,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 				try {
 					tasksIndexSem.acquire();
 				} catch (InterruptedException e1) {
-					e.eventError("Internal Erorr - Semaphores");
+					e.eventError("Internal error - Semaphores");
 				}
 				for(int i=0 ; i<tasksIndex.size(); i++){
 					TaskEntry te = tasksIndex.get(i);
@@ -449,7 +449,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal error - Semaphores");
 			}
 			for (TaskEntry e : tasksIndex)
 				// Add to the result if the owner is the same and if the handlers are null or the same
@@ -523,7 +523,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 		try {
 			tasksIndexSem.acquire();
 		} catch (InterruptedException e1) {
-			e.eventError("Internal Erorr - Semaphores");
+			e.eventError("Internal error - Semaphores");
 		}
 		if (tasksIndex.size() == 0)
 			e.eventWarning("The tasks Index is empty");

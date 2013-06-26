@@ -139,7 +139,7 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 		final TaskMessage tmsg = (TaskMessage) msg.getObject();
 		switch (tmsg.getType()){
 		case TASK_RESPONSE:
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					TaskID tId = ((TaskResponseMessage)tmsg).getId();
@@ -149,15 +149,15 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 					else
 						handleTask(tId, task);
 				}
-			}.run();
+			}.start();
 			break;
 		case NODE_STEAL_REQUEST:
-			new Runnable() {
+			new Thread() {
 				@Override
 				public void run() {
 					handleNodeStealRequest((NodeStealRequestMessage)tmsg, msgFinal.getSrc());
 				}
-			}.run();
+			}.start();
 		default:
 			super.receive(msg);
 		}
@@ -257,7 +257,7 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal error - Semaphores");
 			}
 			for (TaskEntry t : tasksIndex)
 				synchronized(t){
@@ -336,7 +336,7 @@ public abstract class SlaveNode extends TasksNode implements Slave,Runnable {
 			try {
 				tasksIndexSem.acquire();
 			} catch (InterruptedException e1) {
-				e.eventError("Internal Erorr - Semaphores");
+				e.eventError("Internal error - Semaphores");
 			}
 			for(int i=0 ; i<tasksIndex.size(); i++){
 				TaskEntry te = tasksIndex.get(i);
