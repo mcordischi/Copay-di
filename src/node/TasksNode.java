@@ -55,7 +55,8 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	protected int maxThreads;
 	
 	protected JChannel channel;
-	protected View actualView;
+	private View actualView;
+	protected final Semaphore viewSem = new Semaphore(1); 
 	
 	private boolean globalState;
 	private boolean localState;
@@ -332,33 +333,39 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	 * because it may be a long running action
 	 */
 	public void viewAccepted(final View new_view) {
-		if (actualView != null){
-			if (new_view.size() < actualView.size()){
-					final Address missingNode = searchMissingNode(new_view,actualView);
-					if (missingNode != null)
+		new Thread() {
+			@Override
+			public void run() {
+				try {
+					viewSem.acquire();
+				} catch (InterruptedException e1) {
+					e.eventError("Problem with view Semaphore");
+				}
+				if (actualView != null){
+					if (new_view.size() < actualView.size()){
+						final Address missingNode = searchMissingNode(new_view,actualView);
+						if (missingNode != null)
 						//run handleNodeCrash in a new thread, it may get long
-						new Thread() {
-							@Override
-							public void run() {
 								handleNodeCrash(missingNode);
-							}
-						}.start();
-					else
-						e.eventWarning("Unidentified crash");
+						else
+							e.eventWarning("Unidentified crash");
+						}
+						else{
+							Address newNode = searchNewNode(new_view,actualView);
+							e.eventNodeAvailable(newNode);
+						}
+					}
+				actualView = new_view;
+				viewSem.release();
 			}
-			else{
-				Address newNode = searchNewNode(new_view,actualView);
-				e.eventNodeAvailable(newNode);
-			}
-		}
-		actualView = new_view;
+		}.start();
 	}
 	
 	/**
 	 * Called by {@link #viewAccepted(View)}, it handles tasks of the crashed node.
 	 * @param missingNode
 	 */
-	protected void handleNodeCrash(Address missingNode){
+	protected synchronized void handleNodeCrash(Address missingNode){
 				editTasks(missingNode);
 				synchronized(nodesInfo){
 					for(NodeInformation i : nodesInfo)
@@ -414,6 +421,15 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 		for (int i=0;i<n.size();i++)
 			if (!n.contains(o.get(i)))
 				return o.get(i);
+		e.eventWarning("Could not find missing node:\n");
+		String str1 = new String();
+		for (Address a : n)
+			str1 += a.toString() + " ";
+		String str2 = new String();
+		for (Address a : n)
+			str2 += a.toString() + " ";
+		e.eventWarning("New List: " + str1);
+		e.eventWarning("Old List: " + str2);
 		return null;
 	}
 	
