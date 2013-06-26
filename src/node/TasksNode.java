@@ -347,12 +347,12 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 				}
 				if (actualView != null){
 					if (new_view.size() < actualView.size()){
-						final Address missingNode = searchMissingNode(new_view,actualView);
+						Address missingNode = searchMissingNode(new_view,actualView);
 						if (missingNode != null)
 						//run handleNodeCrash in a new thread, it may get long
 								handleNodeCrash(missingNode);
 						else
-							e.eventWarning("Unidentified crash");
+							e.eventError("Unidentified crash");
 						}
 						else{
 							Address newNode = searchNewNode(new_view,actualView);
@@ -422,7 +422,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 	private Address searchMissingNode(View newView,View oldView){
 		List<Address> n = newView.getMembers();
 		List<Address> o = oldView.getMembers();
-		for (int i=0;i<n.size();i++)
+		for (int i=0;i<o.size();i++)
 			if (!n.contains(o.get(i)))
 				return o.get(i);
 		e.eventWarning("Could not find missing node:\n");
@@ -430,7 +430,7 @@ public class TasksNode extends ReceiverAdapter implements Node,Monitor {
 		for (Address a : n)
 			str1 += a.toString() + " ";
 		String str2 = new String();
-		for (Address a : n)
+		for (Address a : o)
 			str2 += a.toString() + " ";
 		e.eventWarning("New List: " + str1);
 		e.eventWarning("Old List: " + str2);
